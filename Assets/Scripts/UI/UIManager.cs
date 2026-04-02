@@ -320,8 +320,8 @@ public class UiManager : MonoBehaviour
         if (MenuMain_button) MenuMain_button.onClick.RemoveAllListeners();
         if (MenuMain_button) MenuMain_button.onClick.AddListener(delegate { ResetMenuPanel(false); ToggleMenuPanel(); });
 
-        if (MenuInGame_button) MenuInGame_button.onClick.RemoveAllListeners();
-        if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
+        // if (MenuInGame_button) MenuInGame_button.onClick.RemoveAllListeners();
+        // if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
 
         if (CasualGame_button) CasualGame_button.onClick.RemoveAllListeners();
         if (CasualGame_button) CasualGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
@@ -1094,11 +1094,17 @@ public class UiManager : MonoBehaviour
     {
         chipPanel.SetActive(istrue);
     }
-    internal void SetNetBetPanel(bool istrue, string totalbet = "-1")
+    internal int currentNetBet = 0;
+
+    internal void SetNetBetPanel(int totalbet)
     {
-        if (totalbet != "-1") NetBet.text = totalbet;
-        else NetBet.text = "0";
-        NetBetPanel.SetActive(istrue);
+        currentNetBet += totalbet; // add or subtract automatically
+
+        // Clamp to 0 (no negative values)
+        if (currentNetBet < 0)
+            currentNetBet = 0;
+
+        NetBet.text = currentNetBet.ToString();
     }
     internal void SetChipoption(bool istrue, bool db = true, bool canc = true, bool undo = true)
     {
@@ -1163,6 +1169,7 @@ public class UiManager : MonoBehaviour
         gameManager.isSinglePlayer = false;
         gameManager.REsetAllBetObject();
         gameManager.ResetTimer();
+        SetNetBetPanel(0);
     }
     void OnSinglePlayerMode()
     {
@@ -1174,7 +1181,9 @@ public class UiManager : MonoBehaviour
         gameManager.TotalCardsCount_text.text = "Single Mode";
         gameManager.isSinglePlayer = true;
         gameManager.REsetAllBetObject();
+        SetNetBetPanel(0);
     }
+
     internal void ToggleRepeteAuto(bool isAuto)
     {
         AutoBtn.gameObject.SetActive(isAuto);

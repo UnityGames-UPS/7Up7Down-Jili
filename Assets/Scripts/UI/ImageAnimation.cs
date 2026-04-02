@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Events;
 
 public class ImageAnimation : MonoBehaviour
 {
@@ -10,7 +11,7 @@ public class ImageAnimation : MonoBehaviour
 		PLAYING,
 		PAUSED
 	}
-
+	public UnityEvent OnAnimationComplete;
 	public static ImageAnimation Instance;
 
 	public List<Sprite> textureArray;
@@ -43,18 +44,19 @@ public class ImageAnimation : MonoBehaviour
 		{
 			Instance = this;
 		}
-		if(StartOnAwake){
+		if (StartOnAwake)
+		{
 			StartAnimation();
 		}
 	}
 
-void Start()
-{
-	//rendererDelegate= this.GetComponent<Image>();
-}
+	void Start()
+	{
+		//rendererDelegate= this.GetComponent<Image>();
+	}
 	private void OnEnable()
 	{
-      if(StartonEnable) StartAnimation();
+		if (StartonEnable) StartAnimation();
 	}
 
 	private void OnDisable()
@@ -74,6 +76,7 @@ void Start()
 			{
 				Invoke("AnimationProcess", delayBetweenAnimation + delayBetweenLoop);
 			}
+			OnAnimationComplete?.Invoke();
 		}
 		else
 		{
