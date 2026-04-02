@@ -11240,7 +11240,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &245530328
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11267,7 +11267,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 245530327}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe87c0e1cc204ed48ad3b37840f39efc, type: 3}
   m_Name: 
@@ -22282,8 +22282,8 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 894245996}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMin: {x: 0.5, y: 0.5}
+  m_AnchorMax: {x: 0.5, y: 0.5}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 75, y: 75}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -60198,7 +60198,7 @@ MonoBehaviour:
   OnAnimationComplete:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1322307022}
+      - m_Target: {fileID: 1397067881}
         m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
         m_MethodName: SetActive
         m_Mode: 6
@@ -64338,13 +64338,14 @@ MonoBehaviour:
   audioBet_button: {fileID: 1508872101}
   audioWin: {fileID: 1508872102}
   clips:
-  - {fileID: 8300000, guid: 6e7b250ebfb314e48badf31e61c33d38, type: 3}
-  - {fileID: 8300000, guid: 3086789e62470421db28280d9a7e2189, type: 3}
-  - {fileID: 8300000, guid: b8c71e2c8c5334cbabfe9f970f1c6b98, type: 3}
-  - {fileID: 8300000, guid: 65a3ebcc17a9d4b1883381629c65448c, type: 3}
-  - {fileID: 8300000, guid: 614f058a58b3843c59983b0ed52ec326, type: 3}
-  - {fileID: 8300000, guid: 7d444e724bec34fc280cbc4ad977af94, type: 3}
-  - {fileID: 8300000, guid: 3b7aa88202f3047e1b996b710a42aae9, type: 3}
+  - {fileID: 8300000, guid: 601016293f0c742969e03b0215e06f51, type: 3}
+  - {fileID: 8300000, guid: 9a4e15ab7851e4b42992f38a5eb598a7, type: 3}
+  - {fileID: 8300000, guid: 9bb4bd437907544009ae428b47e0dbc0, type: 3}
+  - {fileID: 8300000, guid: 3185a54d0d25d4e2294e5194372b5647, type: 3}
+  - {fileID: 8300000, guid: d94ff6700d8fe47ea95918d00ad7f4c0, type: 3}
+  - {fileID: 8300000, guid: bfc1e5d01cf4046d2a70ad894f471343, type: 3}
+  - {fileID: 8300000, guid: 1f3b0328bdb9e48459a36da759b0f457, type: 3}
+  - {fileID: 8300000, guid: b79ea08cc9a0c4e40abffa9306bfcc6a, type: 3}
   Voiceclips:
   - {fileID: 8300000, guid: 1ef8db19de6e1479a9a2e806b202d12b, type: 3}
   - {fileID: 8300000, guid: 5ddcf03b8b124488ea193f435f23da15, type: 3}
@@ -64474,7 +64475,7 @@ AudioSource:
   serializedVersion: 4
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 0}
-  m_Resource: {fileID: 8300000, guid: 79926cfa7feeb487680348fe4e4fda98, type: 3}
+  m_Resource: {fileID: 8300000, guid: 59744f2c1062c4c5e90d87a8a89f55f0, type: 3}
   m_PlayOnAwake: 1
   m_Volume: 0.85
   m_Pitch: 1
@@ -91636,7 +91637,7 @@ MonoBehaviour:
   OnAnimationComplete:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 1322307022}
+      - m_Target: {fileID: 2134251239}
         m_TargetAssemblyTypeName: UnityEngine.GameObject, UnityEngine
         m_MethodName: SetActive
         m_Mode: 6

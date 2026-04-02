@@ -463,6 +463,7 @@ public class GameManager : MonoBehaviour
                     obj.BlackTransParent.SetActive(true);
                 }
             }
+            // audioManager.PlayWLAudio("betDone");
             Betlocked.StopAnimation();
             Betlocked.gameObject.SetActive(true);
             Betlocked.StartAnimation();
@@ -476,6 +477,7 @@ public class GameManager : MonoBehaviour
     internal void OnGameLoopStart()
     {
         REsetAllBetObject();
+        audioManager.PlayWLAudio("betNow");
         Plesebetnow.StopAnimation();
         Plesebetnow.gameObject.SetActive(true);
         Plesebetnow.StartAnimation();
@@ -517,7 +519,7 @@ public class GameManager : MonoBehaviour
     }
     internal void ManageResult(Root diceResult)
     {
-
+        audioManager.PlayWLAudio("shakingDice");
         DiceAnimator.StartAnimation(FirstDiceSprite[diceResult.dice1 - 1], SecondDiceSprite[diceResult.dice2 - 1]);
         CircleTimerFill.gameObject.transform.parent.gameObject.SetActive(false);
         ResetTimer();
@@ -528,6 +530,7 @@ public class GameManager : MonoBehaviour
     {
         yield return new WaitForSeconds(3f);
         int total = diceResult.dice1 + diceResult.dice2;
+        audioManager.StopWLAaudio();
         uiManager.UpdateStats(total, uiManager.DiceSprites[diceResult.dice1 - 1], uiManager.DiceSprites[diceResult.dice2 - 1], true);
         if (total == 7)
         {
@@ -539,7 +542,7 @@ public class GameManager : MonoBehaviour
             AllOptions[2].BlackTransParent.SetActive(false);
             AllOptions[total + 1].BlackTransParent.SetActive(false);
             playWin(AllOptions[2]);
-            playWin(AllOptions[total]);
+            playWin(AllOptions[total + 1]);
 
         }
         else
@@ -954,7 +957,7 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        audioManager.PlayWLAudio("double");
+        //  audioManager.PlayWLAudio("double");
     }
     // internal void ManageBrodcastBetsPlayer()
     // {
@@ -1299,7 +1302,7 @@ public class GameManager : MonoBehaviour
     #region  manage BEt Double bet cancle &&& undo
     internal void RepeAtBet(List<Bet> bets)
     {
-        audioManager.PlayWLAudio("double");
+        // audioManager.PlayWLAudio("double");
         Debug.Log("RepeatBet started");
 
         List<int> roomChips = FindRoom(); // chip denominations
@@ -1345,7 +1348,7 @@ public class GameManager : MonoBehaviour
     }
     internal void DoubleBets(List<Bet> bets)
     {
-        audioManager.PlayWLAudio("double");
+        // audioManager.PlayWLAudio("double");
 
         List<int> roomChips = FindRoom(); // chip denominations
 

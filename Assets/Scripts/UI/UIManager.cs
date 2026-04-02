@@ -557,15 +557,24 @@ public class UiManager : MonoBehaviour
     private void OnLimitButtonClicked(int levelNumber)
     {
         Debug.Log($"Limit button clicked: Level {levelNumber}");
-
-        // Here you can handle the level selection logic
-        // For example:
-        // string levelKey = $"level_{levelNumber}";
-        // currentRoom = levelKey;
-
-        // // Update UI or do whatever is needed when a limit is selected
-        // // You might want to change the room or update the chip denominations
-        // SetCoinData(); // Refresh coin data for the new room
+        if (gameManager.currentRoom != socketManager.initialData.levels[levelNumber - 1])
+        {
+            foreach (var txt in LimitBtn)
+            {
+                TMP_Text butT = GetButtonTextComponent(txt);
+                if (butT != null)
+                {
+                    butT.color = Color.white;
+                }
+            }
+            TMP_Text butTe = GetButtonTextComponent(LimitBtn[levelNumber - 1]);
+            if (butTe != null)
+            {
+                butTe.color = Color.yellow;
+            }
+            socketManager.SendHome();
+            gameManager.currentRoom = socketManager.initialData.levels[levelNumber - 1];
+        }
     }
 
     private TMP_Text GetButtonTextComponent(Button button)
@@ -740,7 +749,7 @@ public class UiManager : MonoBehaviour
 
     private void ExpandCoins()
     {
-        if (audioController) audioController.PlayWLAudio("coinSelect");
+        if (audioController) audioController.PlayWLAudio("openChip");
 
         //   SetChipoption(false);
 
@@ -756,6 +765,7 @@ public class UiManager : MonoBehaviour
 
         for (int i = 0; i < Coins.Count; i++)
         {
+            if (audioController) audioController.PlayWLAudio("openChip");
             if (i == uiSelectedCoin)
                 continue;
 
@@ -775,7 +785,6 @@ public class UiManager : MonoBehaviour
 
             coin.transform.DOLocalMove(targetPos, duration)
                 .SetDelay(arcIndex * 0.1f);
-
             arcIndex++;
         }
 

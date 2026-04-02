@@ -688,12 +688,14 @@ public class SocketIOManager : MonoBehaviour
         gameManager.ClearAllBets();
         Debug.Log("Home Receved: " + json);
         ReturnHome = JsonUtility.FromJson<Root>(json);
-        gameManager.SetPlayerCountOnReturn(ReturnHome.payload.lobby, ReturnHome.payload.balance);
+        // gameManager.SetPlayerCountOnReturn(ReturnHome.payload.lobby, ReturnHome.payload.balance);
         playerdata.balance = ReturnHome.payload.balance;
         StartCoroutine(gameManager.ShowLoadingPage("Loading...."));
-        gameManager.GamePage.SetActive(false);
-        gameManager.HomePage.SetActive(true);
+        gameManager.GamePage.SetActive(true);
+        //gameManager.HomePage.SetActive(true);
         //  Invoke(nameof(Reconnect), 0.2f);
+        // gameManager.currentRoom = initialData.levels[0];
+        SendRoomSelection(gameManager.currentRoom);
 
     }
     void OnHistory(string json)

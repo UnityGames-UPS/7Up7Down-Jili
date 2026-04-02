@@ -32,25 +32,28 @@ public class AudioManager : MonoBehaviour
         {
             case "betDone":
                 index = 0;
-                audioPlayer_wl.loop = true;
+                // audioPlayer_wl.loop = true;
                 break;
-            case "betSelect":
+            case "amount":
                 index = 1;
                 break;
-            case "numberchange":
+            case "openChip":
                 index = 2;
                 break;
-            case "coinSelect":
+            case "extraPay":
                 index = 3;
                 break;
-            case "double":
+            case "betNow":
                 index = 4;
                 break;
-            case "cards":
+            case "pop":
                 index = 5;
                 break;
-            case "midCard":
+            case "shakingDice":
                 index = 6;
+                break;
+            case "singleChip":
+                index = 7;
                 break;
 
         }
