@@ -1,1 +1,2 @@
-# 7Up7Down-Jili
+# God-Of-Wealth
+God Of Wealth base slot

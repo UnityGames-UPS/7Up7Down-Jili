@@ -1,0 +1,327 @@
+fileFormatVersion: 2
+guid: 6649bd03d83744ca4b46ac7482dc8024
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 12
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_1
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 313
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 61230f111371f4d40b53fbe5773fd025
+      internalID: 1613085120
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_6
+      rect:
+        serializedVersion: 2
+        x: 305
+        y: 313
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f87da09c0c7194c69930f29a412c7154
+      internalID: -342202830
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_11
+      rect:
+        serializedVersion: 2
+        x: 561
+        y: 313
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 4db808e02209a45129bd119915dbe8aa
+      internalID: 1663568989
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_16
+      rect:
+        serializedVersion: 2
+        x: 817
+        y: 313
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 5b4345488c81446e4bd2dbd15f5d83f9
+      internalID: -1093074520
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_20
+      rect:
+        serializedVersion: 2
+        x: 49
+        y: 57
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3c5fe96781f304ec593506859ad9cdef
+      internalID: 1688630407
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_23
+      rect:
+        serializedVersion: 2
+        x: 305
+        y: 57
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 94af8bc5dd2e44b17a31892778635458
+      internalID: 84578724
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_26
+      rect:
+        serializedVersion: 2
+        x: 561
+        y: 57
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 929d84f2282124fcf86865999386d45f
+      internalID: 433388269
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Sound_29
+      rect:
+        serializedVersion: 2
+        x: 817
+        y: 57
+        width: 157
+        height: 142
+      alignment: 0
+      pivot: {x: 0.5, y: 0.5}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bde5372a8841b406283f4db9d6e4a737
+      internalID: 616774904
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      7up_7down_UI_Btn_Sound_0: 598193725
+      7up_7down_UI_Btn_Sound_1: 1613085120
+      7up_7down_UI_Btn_Sound_10: -597755518
+      7up_7down_UI_Btn_Sound_11: 1663568989
+      7up_7down_UI_Btn_Sound_12: -2093947493
+      7up_7down_UI_Btn_Sound_13: -946159719
+      7up_7down_UI_Btn_Sound_14: 179831244
+      7up_7down_UI_Btn_Sound_15: 445785103
+      7up_7down_UI_Btn_Sound_16: -1093074520
+      7up_7down_UI_Btn_Sound_17: -434694466
+      7up_7down_UI_Btn_Sound_18: 725461971
+      7up_7down_UI_Btn_Sound_19: -936641675
+      7up_7down_UI_Btn_Sound_2: -1046396262
+      7up_7down_UI_Btn_Sound_20: 1688630407
+      7up_7down_UI_Btn_Sound_21: 1189920196
+      7up_7down_UI_Btn_Sound_22: -786236114
+      7up_7down_UI_Btn_Sound_23: 84578724
+      7up_7down_UI_Btn_Sound_24: 2056934406
+      7up_7down_UI_Btn_Sound_25: 1765340581
+      7up_7down_UI_Btn_Sound_26: 433388269
+      7up_7down_UI_Btn_Sound_27: 852161786
+      7up_7down_UI_Btn_Sound_28: -1029158467
+      7up_7down_UI_Btn_Sound_29: 616774904
+      7up_7down_UI_Btn_Sound_3: -720083509
+      7up_7down_UI_Btn_Sound_30: 519453180
+      7up_7down_UI_Btn_Sound_31: -3456208
+      7up_7down_UI_Btn_Sound_4: 2025779468
+      7up_7down_UI_Btn_Sound_5: -1304323195
+      7up_7down_UI_Btn_Sound_6: -342202830
+      7up_7down_UI_Btn_Sound_7: -1138214584
+      7up_7down_UI_Btn_Sound_8: 433905987
+      7up_7down_UI_Btn_Sound_9: -1393682180
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

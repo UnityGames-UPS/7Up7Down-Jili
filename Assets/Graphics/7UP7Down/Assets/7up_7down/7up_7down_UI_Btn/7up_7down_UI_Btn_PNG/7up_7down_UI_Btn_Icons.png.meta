@@ -1,0 +1,523 @@
+fileFormatVersion: 2
+guid: bdd0c47c9d77743f1bc7a4dc34361523
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 12
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 2
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_0
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 561
+        width: 156
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 686f661e8166a4ff4a1c3c4530c69dd2
+      internalID: -583053263
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_1
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 561
+        width: 222
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 259785f25d3104ba19378a7e6d7542a1
+      internalID: 1901029548
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_2
+      rect:
+        serializedVersion: 2
+        x: 552
+        y: 555
+        width: 176
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b1d29ff96100d447b9ba966f4f87d280
+      internalID: -1824648798
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_3
+      rect:
+        serializedVersion: 2
+        x: 809
+        y: 558
+        width: 174
+        height: 164
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: bc5c0486626fe4bfd9d99391fd5a5f69
+      internalID: 1415650551
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_4
+      rect:
+        serializedVersion: 2
+        x: 1044
+        y: 555
+        width: 216
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 762a3f72d7df0444baf3ec3e816e4cfd
+      internalID: 2040803833
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_5
+      rect:
+        serializedVersion: 2
+        x: 1330
+        y: 543
+        width: 156
+        height: 194
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 0370c146e401a403998ff6dea4246b2e
+      internalID: 1273085817
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_6
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 305
+        width: 156
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 1d93d76f421ec4ae48ca4e6d773bf04d
+      internalID: 832154522
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_7
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 305
+        width: 222
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: ac7fe21dda3c749af833876a641d678b
+      internalID: 360971130
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_8
+      rect:
+        serializedVersion: 2
+        x: 552
+        y: 299
+        width: 176
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 30edf1e78aa0a4853b630cf0321bbdd5
+      internalID: -1132703725
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_9
+      rect:
+        serializedVersion: 2
+        x: 809
+        y: 302
+        width: 174
+        height: 164
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: f7dbddf25346645cb9296117cd71ce2d
+      internalID: 1151401677
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_10
+      rect:
+        serializedVersion: 2
+        x: 1044
+        y: 299
+        width: 216
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 85ae74b62ad4c42059e5ab3ef0d259c2
+      internalID: -1393498796
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_11
+      rect:
+        serializedVersion: 2
+        x: 1330
+        y: 287
+        width: 156
+        height: 194
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: fb032098eccff48b0812b3860769f257
+      internalID: -783745035
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_12
+      rect:
+        serializedVersion: 2
+        x: 50
+        y: 49
+        width: 156
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 9d821298f7ab746308085f515992f397
+      internalID: -1606545633
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_13
+      rect:
+        serializedVersion: 2
+        x: 273
+        y: 49
+        width: 222
+        height: 158
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 3af29f525662f48558367c5b7c99e721
+      internalID: -1802856716
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_14
+      rect:
+        serializedVersion: 2
+        x: 552
+        y: 43
+        width: 176
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: cbc43d69590454c9a9396e6abcb5f30f
+      internalID: -1570206056
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_15
+      rect:
+        serializedVersion: 2
+        x: 809
+        y: 46
+        width: 174
+        height: 164
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 454c4980c0c8f42b29c6bb1f76a35ff4
+      internalID: -830801771
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_16
+      rect:
+        serializedVersion: 2
+        x: 1044
+        y: 43
+        width: 216
+        height: 170
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: b0861e3c437644770b32d1829a9f09c5
+      internalID: -1648393558
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: 7up_7down_UI_Btn_Icons_17
+      rect:
+        serializedVersion: 2
+        x: 1330
+        y: 31
+        width: 156
+        height: 194
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      outline: []
+      physicsShape: []
+      tessellationDetail: 0
+      bones: []
+      spriteID: 04e13c88e8c03458a9d0439314ce4aa9
+      internalID: 168598205
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable:
+      7up_7down_UI_Btn_Icons_0: -583053263
+      7up_7down_UI_Btn_Icons_1: 1901029548
+      7up_7down_UI_Btn_Icons_10: -1393498796
+      7up_7down_UI_Btn_Icons_11: -783745035
+      7up_7down_UI_Btn_Icons_12: -1606545633
+      7up_7down_UI_Btn_Icons_13: -1802856716
+      7up_7down_UI_Btn_Icons_14: -1570206056
+      7up_7down_UI_Btn_Icons_15: -830801771
+      7up_7down_UI_Btn_Icons_16: -1648393558
+      7up_7down_UI_Btn_Icons_17: 168598205
+      7up_7down_UI_Btn_Icons_2: -1824648798
+      7up_7down_UI_Btn_Icons_3: 1415650551
+      7up_7down_UI_Btn_Icons_4: 2040803833
+      7up_7down_UI_Btn_Icons_5: 1273085817
+      7up_7down_UI_Btn_Icons_6: 832154522
+      7up_7down_UI_Btn_Icons_7: 360971130
+      7up_7down_UI_Btn_Icons_8: -1132703725
+      7up_7down_UI_Btn_Icons_9: 1151401677
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

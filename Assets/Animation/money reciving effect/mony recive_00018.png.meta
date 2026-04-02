@@ -1,0 +1,884 @@
+fileFormatVersion: 2
+guid: 99bb097211273440087f087bf69b98a6
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -7618213120264452642
+    second: mony recive_00018_0
+  - first:
+      213: 3553183869781474780
+    second: mony recive_00018_1
+  - first:
+      213: 9037519710193414754
+    second: mony recive_00018_2
+  - first:
+      213: 8420476402695278661
+    second: mony recive_00018_3
+  - first:
+      213: -1376558512448685936
+    second: mony recive_00018_4
+  - first:
+      213: 4037654775246795402
+    second: mony recive_00018_5
+  - first:
+      213: 498855810365083825
+    second: mony recive_00018_6
+  - first:
+      213: 7960224734672009274
+    second: mony recive_00018_7
+  - first:
+      213: -830006445609555846
+    second: mony recive_00018_8
+  - first:
+      213: 7815930877025752274
+    second: mony recive_00018_9
+  - first:
+      213: -4372939436124142969
+    second: mony recive_00018_10
+  - first:
+      213: 3081318670211827996
+    second: mony recive_00018_11
+  - first:
+      213: -1106842371900643916
+    second: mony recive_00018_12
+  - first:
+      213: -3293524850757867564
+    second: mony recive_00018_13
+  - first:
+      213: -8002768818923436224
+    second: mony recive_00018_14
+  - first:
+      213: -7983868883443277168
+    second: mony recive_00018_15
+  - first:
+      213: 1261629253491224694
+    second: mony recive_00018_16
+  - first:
+      213: -6220650023853247227
+    second: mony recive_00018_17
+  - first:
+      213: 6177591972454651154
+    second: mony recive_00018_18
+  - first:
+      213: 7817219210646681722
+    second: mony recive_00018_19
+  - first:
+      213: 8093814401158038903
+    second: mony recive_00018_20
+  - first:
+      213: 9195003814024631988
+    second: mony recive_00018_21
+  - first:
+      213: -3374585290285360164
+    second: mony recive_00018_22
+  - first:
+      213: -3481756702892440181
+    second: mony recive_00018_23
+  - first:
+      213: -7001205658735039971
+    second: mony recive_00018_24
+  - first:
+      213: -4403569993708770483
+    second: mony recive_00018_25
+  - first:
+      213: 72715553979273831
+    second: mony recive_00018_26
+  - first:
+      213: 3422082477838262074
+    second: mony recive_00018_27
+  - first:
+      213: 2884099350905278730
+    second: mony recive_00018_28
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: mony recive_00018_0
+      rect:
+        serializedVersion: 2
+        x: 625
+        y: 977
+        width: 167
+        height: 131
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ed5ca67b78ba64690800000000000000
+      internalID: -7618213120264452642
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_1
+      rect:
+        serializedVersion: 2
+        x: 875
+        y: 1104
+        width: 50
+        height: 62
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cddf8fb67e17f4130800000000000000
+      internalID: 3553183869781474780
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_2
+      rect:
+        serializedVersion: 2
+        x: 1111
+        y: 988
+        width: 78
+        height: 123
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2627ba82b48bb6d70800000000000000
+      internalID: 9037519710193414754
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_3
+      rect:
+        serializedVersion: 2
+        x: 865
+        y: 824
+        width: 187
+        height: 273
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5401636bcaa8bd470800000000000000
+      internalID: 8420476402695278661
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_4
+      rect:
+        serializedVersion: 2
+        x: 1302
+        y: 979
+        width: 29
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 098b4f4835b75ece0800000000000000
+      internalID: -1376558512448685936
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_5
+      rect:
+        serializedVersion: 2
+        x: 1324
+        y: 850
+        width: 270
+        height: 206
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a82be3c20a1a80830800000000000000
+      internalID: 4037654775246795402
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_6
+      rect:
+        serializedVersion: 2
+        x: 702
+        y: 668
+        width: 135
+        height: 155
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1b053fa67ba4ce600800000000000000
+      internalID: 498855810365083825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_7
+      rect:
+        serializedVersion: 2
+        x: 735
+        y: 817
+        width: 143
+        height: 138
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a38376a9836687e60800000000000000
+      internalID: 7960224734672009274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_8
+      rect:
+        serializedVersion: 2
+        x: 884
+        y: 779
+        width: 30
+        height: 61
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a78682809893b74f0800000000000000
+      internalID: -830006445609555846
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_9
+      rect:
+        serializedVersion: 2
+        x: 1040
+        y: 523
+        width: 338
+        height: 306
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 2d4902ad8b3c77c60800000000000000
+      internalID: 7815930877025752274
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_10
+      rect:
+        serializedVersion: 2
+        x: 1615
+        y: 739
+        width: 232
+        height: 112
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 782068d60c23053c0800000000000000
+      internalID: -4372939436124142969
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_11
+      rect:
+        serializedVersion: 2
+        x: 600
+        y: 678
+        width: 137
+        height: 90
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c1941c9410b03ca20800000000000000
+      internalID: 3081318670211827996
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_12
+      rect:
+        serializedVersion: 2
+        x: 799
+        y: 515
+        width: 142
+        height: 281
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b5e2802ab4b3a0f0800000000000000
+      internalID: -1106842371900643916
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_13
+      rect:
+        serializedVersion: 2
+        x: 943
+        y: 732
+        width: 34
+        height: 30
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4d7e7ab199c0b42d0800000000000000
+      internalID: -3293524850757867564
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_14
+      rect:
+        serializedVersion: 2
+        x: 589
+        y: 686
+        width: 18
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 0470f70e82470f090800000000000000
+      internalID: -8002768818923436224
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_15
+      rect:
+        serializedVersion: 2
+        x: 497
+        y: 493
+        width: 74
+        height: 145
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 092a1150d89933190800000000000000
+      internalID: -7983868883443277168
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_16
+      rect:
+        serializedVersion: 2
+        x: 799
+        y: 393
+        width: 400
+        height: 252
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 670f5942f15328110800000000000000
+      internalID: 1261629253491224694
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_17
+      rect:
+        serializedVersion: 2
+        x: 1394
+        y: 540
+        width: 11
+        height: 12
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 505b33003cfcba9a0800000000000000
+      internalID: -6220650023853247227
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_18
+      rect:
+        serializedVersion: 2
+        x: 630
+        y: 517
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 215d67d2b273bb550800000000000000
+      internalID: 6177591972454651154
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_19
+      rect:
+        serializedVersion: 2
+        x: 644
+        y: 526
+        width: 7
+        height: 7
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a7874f564775c7c60800000000000000
+      internalID: 7817219210646681722
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_20
+      rect:
+        serializedVersion: 2
+        x: 597
+        y: 495
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 77547f2a051035070800000000000000
+      internalID: 8093814401158038903
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_21
+      rect:
+        serializedVersion: 2
+        x: 613
+        y: 506
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 4b6dc4b60473b9f70800000000000000
+      internalID: 9195003814024631988
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_22
+      rect:
+        serializedVersion: 2
+        x: 519
+        y: 445
+        width: 13
+        height: 14
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: cdb584cce801b21d0800000000000000
+      internalID: -3374585290285360164
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_23
+      rect:
+        serializedVersion: 2
+        x: 531
+        y: 451
+        width: 62
+        height: 46
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: b85c2c1d9b05eafc0800000000000000
+      internalID: -3481756702892440181
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_24
+      rect:
+        serializedVersion: 2
+        x: 454
+        y: 402
+        width: 50
+        height: 40
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d1aa4af1c88b6de90800000000000000
+      internalID: -7001205658735039971
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_25
+      rect:
+        serializedVersion: 2
+        x: 503
+        y: 434
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d4b6b6dfb6063e2c0800000000000000
+      internalID: -4403569993708770483
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_26
+      rect:
+        serializedVersion: 2
+        x: 425
+        y: 385
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 762949c3966520100800000000000000
+      internalID: 72715553979273831
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_27
+      rect:
+        serializedVersion: 2
+        x: 442
+        y: 396
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a3f53a3f1edad7f20800000000000000
+      internalID: 3422082477838262074
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: mony recive_00018_28
+      rect:
+        serializedVersion: 2
+        x: 409
+        y: 374
+        width: 13
+        height: 13
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a01d4ab3411660820800000000000000
+      internalID: 2884099350905278730
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      mony recive_00018_0: -7618213120264452642
+      mony recive_00018_1: 3553183869781474780
+      mony recive_00018_10: -4372939436124142969
+      mony recive_00018_11: 3081318670211827996
+      mony recive_00018_12: -1106842371900643916
+      mony recive_00018_13: -3293524850757867564
+      mony recive_00018_14: -8002768818923436224
+      mony recive_00018_15: -7983868883443277168
+      mony recive_00018_16: 1261629253491224694
+      mony recive_00018_17: -6220650023853247227
+      mony recive_00018_18: 6177591972454651154
+      mony recive_00018_19: 7817219210646681722
+      mony recive_00018_2: 9037519710193414754
+      mony recive_00018_20: 8093814401158038903
+      mony recive_00018_21: 9195003814024631988
+      mony recive_00018_22: -3374585290285360164
+      mony recive_00018_23: -3481756702892440181
+      mony recive_00018_24: -7001205658735039971
+      mony recive_00018_25: -4403569993708770483
+      mony recive_00018_26: 72715553979273831
+      mony recive_00018_27: 3422082477838262074
+      mony recive_00018_28: 2884099350905278730
+      mony recive_00018_3: 8420476402695278661
+      mony recive_00018_4: -1376558512448685936
+      mony recive_00018_5: 4037654775246795402
+      mony recive_00018_6: 498855810365083825
+      mony recive_00018_7: 7960224734672009274
+      mony recive_00018_8: -830006445609555846
+      mony recive_00018_9: 7815930877025752274
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
