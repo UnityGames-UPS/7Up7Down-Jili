@@ -90664,10 +90664,10 @@ MonoBehaviour:
   MenuInGame_button: {fileID: 233022745}
   History_button: {fileID: 855829185}
   Info_button: {fileID: 831005055}
-  Sound_button: {fileID: 1883029554}
-  Music_button: {fileID: 1883029554}
-  SoundMute_button: {fileID: 263267130}
-  MusicMute_button: {fileID: 263267130}
+  Sound_button: {fileID: 1165497385}
+  Music_button: {fileID: 1165497385}
+  SoundMute_button: {fileID: 1406366511}
+  MusicMute_button: {fileID: 1406366511}
   Home_button: {fileID: 835168165}
   Exit_Button: {fileID: 1353951003}
   YesHome_button: {fileID: 568220946}

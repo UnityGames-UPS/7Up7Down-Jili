@@ -643,6 +643,11 @@ public class GameManager : MonoBehaviour
         ManagePayments(socketManager.CashoutData.payouts);
         yield return new WaitForSeconds(2f);
         DistributeAllPayout();
+        foreach (var op in AllOptions)
+        {
+            op.ResetOptionUI();
+            op.BlackTransParent.SetActive(false);
+        }
         SetOtherplayerData(socketManager.CashoutData.leaderboards);
         yield return new WaitForSeconds(2f);
         foreach (var op in AllOptions)
@@ -1388,6 +1393,7 @@ public class GameManager : MonoBehaviour
                     UpdateMyBetOnOption(bet.betOption, piece);
                 }
                 uiManager.SetNetBetPanel(amount);
+
             }
         }
     }
@@ -1416,6 +1422,7 @@ public class GameManager : MonoBehaviour
                 ReturnChip(c);
         }
         PlayerChips.Clear();
+
     }
     internal void UnduBets(string betId)
     {

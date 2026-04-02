@@ -348,10 +348,10 @@ public class UiManager : MonoBehaviour
         if (SoundMute_button) SoundMute_button.onClick.AddListener(delegate { ToggleSound(); });
 
         if (Music_button) Music_button.onClick.RemoveAllListeners();
-        if (Music_button) Music_button.onClick.AddListener(delegate { ToggleMusic(); });
+        if (Music_button) Music_button.onClick.AddListener(delegate { ToggleSound(); });
 
         if (MusicMute_button) MusicMute_button.onClick.RemoveAllListeners();
-        if (MusicMute_button) MusicMute_button.onClick.AddListener(delegate { ToggleMusic(); });
+        if (MusicMute_button) MusicMute_button.onClick.AddListener(delegate { ToggleSound(); });
 
         if (Home_button) Home_button.onClick.RemoveAllListeners();
         if (Home_button) Home_button.onClick.AddListener(delegate { OpenPopup(GameQuitPopup); });
@@ -574,6 +574,7 @@ public class UiManager : MonoBehaviour
             }
             socketManager.SendHome();
             gameManager.currentRoom = socketManager.initialData.levels[levelNumber - 1];
+            ToggleBetLimitPanel();
         }
     }
 
@@ -687,6 +688,7 @@ public class UiManager : MonoBehaviour
 
     private void ToggleSound()
     {
+        ToggleMusic();
         isSound = !isSound;
         if (isSound)
         {
@@ -751,21 +753,20 @@ public class UiManager : MonoBehaviour
     {
         if (audioController) audioController.PlayWLAudio("openChip");
 
-        //   SetChipoption(false);
-
         Vector3 center = coinSelector.transform.localPosition;
 
         float radius = 300f;
+        float startAngle = 150f;
+        float endAngle = 30f;
 
-        float startAngle = 150f;   // better top-left
-        float endAngle = 30f;      // better top-right
-
-        int expandCount = Coins.Count - 1; // exclude selected
+        int expandCount = Coins.Count - 1;
         int arcIndex = 0;
 
         for (int i = 0; i < Coins.Count; i++)
         {
             if (audioController) audioController.PlayWLAudio("openChip");
+
+            // CHANGE THIS LINE - Skip the currently selected coin
             if (i == uiSelectedCoin)
                 continue;
 
@@ -800,18 +801,22 @@ public class UiManager : MonoBehaviour
         {
             var coin = Coins[i];
 
+            // Don't retract the currently selected coin
+            if (i == uiSelectedCoin)
+                continue;
+
             coin.transform.DOLocalMove(center, duration)
                 .SetEase(Ease.InBack)
                 .OnComplete(() =>
                 {
-                    coin.gameObject.SetActive(false);
+                    if (i != uiSelectedCoin)
+                        coin.gameObject.SetActive(false);
                 });
         }
 
         if (gameManager.currentTotalBet > 0)
         {
-            // Repeatpanel.SetActive(false);
-            // SetChipoption(true);
+            // Your logic here
         }
         else
         {
@@ -821,23 +826,27 @@ public class UiManager : MonoBehaviour
         isExpanded = false;
     }
 
-
-
-
     public void OnCoinSelected(Button selectedCoin)
     {
-        // SetChipoption(false);
+        // Find the index of the selected coin
+        int newSelectedIndex = -1;
+        for (int i = 0; i < Coins.Count; i++)
+        {
+            if (Coins[i].gameObject == selectedCoin.gameObject)
+            {
+                newSelectedIndex = i;
+                break;
+            }
+        }
 
         var tempImage = coinSelector.chipImage.sprite;
         coinSelector.chipImage.sprite = selectedCoin.image.sprite;
-        //selectedCoin.image.sprite = tempImage;
 
         TMP_Text selectorText = coinSelector.GetComponentInChildren<TMP_Text>();
         TMP_Text selectedText = selectedCoin.GetComponentInChildren<TMP_Text>();
 
         string tempText = selectorText.text;
         selectorText.text = selectedText.text;
-        // selectedText.text = tempText;
 
         Chip selectorChip = coinSelector.GetComponent<Chip>();
         Chip selectedChip = selectedCoin.GetComponent<Chip>();
@@ -845,16 +854,49 @@ public class UiManager : MonoBehaviour
         int tempIndex = selectorChip.chipIndex;
         selectorChip.chipIndex = selectedChip.chipIndex;
         selectedChip.chipIndex = tempIndex;
-        // Debug.Log("mmmmmmmmmmmmmmmmm" + selectorChip.chipIndex);
+
+        // ADD THIS LINE - Update the selected coin index
+        uiSelectedCoin = newSelectedIndex;
+
         RetractCoins();
         for (int i = 0; i < Coins.Count; i++)
         {
             Coins[i].gameObject.SetActive(true);
         }
         selectedCoin.gameObject.SetActive(false);
-        //  SetgameRulePanel();
-
     }
+
+    // public void OnCoinSelected(Button selectedCoin)
+    // {
+    //     // SetChipoption(false);
+
+    //     var tempImage = coinSelector.chipImage.sprite;
+    //     coinSelector.chipImage.sprite = selectedCoin.image.sprite;
+    //     //selectedCoin.image.sprite = tempImage;
+
+    //     TMP_Text selectorText = coinSelector.GetComponentInChildren<TMP_Text>();
+    //     TMP_Text selectedText = selectedCoin.GetComponentInChildren<TMP_Text>();
+
+    //     string tempText = selectorText.text;
+    //     selectorText.text = selectedText.text;
+    //     // selectedText.text = tempText;
+
+    //     Chip selectorChip = coinSelector.GetComponent<Chip>();
+    //     Chip selectedChip = selectedCoin.GetComponent<Chip>();
+
+    //     int tempIndex = selectorChip.chipIndex;
+    //     selectorChip.chipIndex = selectedChip.chipIndex;
+    //     selectedChip.chipIndex = tempIndex;
+    //     // Debug.Log("mmmmmmmmmmmmmmmmm" + selectorChip.chipIndex);
+    //     RetractCoins();
+    //     for (int i = 0; i < Coins.Count; i++)
+    //     {
+    //         Coins[i].gameObject.SetActive(true);
+    //     }
+    //     selectedCoin.gameObject.SetActive(false);
+    //     //  SetgameRulePanel();
+
+    // }
 
     #endregion
 
