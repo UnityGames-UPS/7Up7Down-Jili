@@ -165,10 +165,10 @@ public class GameManager : MonoBehaviour
     internal void SetInitialData()
     {
 
-        homepage.SetInitHomedata(socketManager.initialData);
+        //  homepage.SetInitHomedata(socketManager.initialData);
         SetPlayerData(socketManager.playerdata);
     }
-    internal IEnumerator ShowLoadingPage(string loadingPageText, int activeTime = 6)
+    internal IEnumerator ShowLoadingPage(string loadingPageText, int activeTime = 4)
     {
 
         LoadingPage_text.text = loadingPageText;
@@ -286,7 +286,7 @@ public class GameManager : MonoBehaviour
 
     void SetPlayerData(Player player)
     {
-        homepage.setPlayerData(socketManager.playerdata);
+        //  homepage.setPlayerData(socketManager.playerdata);
         uiManager.MainPlayers.SetData(player.username, player.balance.ToString(), uiManager.UserIcons[0]);
     }
     internal void SetOtherplayerData(Leaderboards leaderboard)
@@ -1451,7 +1451,11 @@ public class GameManager : MonoBehaviour
             }
         }
     }
-
+    internal void UnduBets(int amount, string betOpt)
+    {
+        OptionPrefab opt = FindOption(betOpt);
+        opt.AddPlayerChip(-amount, PlayerChipSprite[0]);
+    }
     #endregion
 
 
@@ -1848,7 +1852,7 @@ public class GameManager : MonoBehaviour
     #endregion
     internal void SetPlayerCountOnReturn(Lobby lobby, double playerbalance)
     {
-        homepage.PlayerBalance.text = playerbalance.ToString();
+        /// homepage.PlayerBalance.text = playerbalance.ToString();
         // homepage.CPlayerCount.text = lobby.casual.ToString() + "Players";
         // homepage.NPlayerCount.text = lobby.novice.ToString() + "Players";
         // homepage.EPlayerCount.text = lobby.expert.ToString() + "Players";

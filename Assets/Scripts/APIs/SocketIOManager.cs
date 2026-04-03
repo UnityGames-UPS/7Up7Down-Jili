@@ -540,6 +540,7 @@ public class SocketIOManager : MonoBehaviour
 
     internal void SendModeSelection(string mode)
     {
+        StartCoroutine(gameManager.ShowLoadingPage("Switch Mode"));
         Debug.Log("*** send Data ***" + mode);
         SendRoom message = new SendRoom();
         message.payload = new Payload();
@@ -690,7 +691,7 @@ public class SocketIOManager : MonoBehaviour
         ReturnHome = JsonUtility.FromJson<Root>(json);
         // gameManager.SetPlayerCountOnReturn(ReturnHome.payload.lobby, ReturnHome.payload.balance);
         playerdata.balance = ReturnHome.payload.balance;
-        StartCoroutine(gameManager.ShowLoadingPage("Loading...."));
+        StartCoroutine(gameManager.ShowLoadingPage("Changing Game Hall.."));
         gameManager.GamePage.SetActive(true);
         //gameManager.HomePage.SetActive(true);
         //  Invoke(nameof(Reconnect), 0.2f);
@@ -777,9 +778,13 @@ public class SocketIOManager : MonoBehaviour
         if (doubleBetData.success)
         {
             gameManager.UnduBets(doubleBetData.payload.bet.betId);
+            gameManager.UnduBets(doubleBetData.amount, doubleBetData.payload.betOption);
+
+
             gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
             playerdata.balance = doubleBetData.payload.balance;
             gameManager.currentTotalBet = doubleBetData.payload.totalBet;
+
             //  if (doubleBetData.payload.totalBet == 0) uiManager.SetChipoption(false);
         }
     }
@@ -789,7 +794,7 @@ public class SocketIOManager : MonoBehaviour
         roomData = JsonUtility.FromJson<Root>(json);
         if (roomData.success == false)
         {
-            StartCoroutine(gameManager.ShowLoadingPage("Loading...."));
+            //  StartCoroutine(gameManager.ShowLoadingPage("Loading...."));
             gameManager.HomePage.SetActive(true);
             // gameManager.LoadingPage.SetActive(false);
             gameManager.GamePage.SetActive(false);
@@ -806,7 +811,7 @@ public class SocketIOManager : MonoBehaviour
         roomData = JsonUtility.FromJson<Root>(json);
         if (roomData.success == false)
         {
-            StartCoroutine(gameManager.ShowLoadingPage("Loading...."));
+            //  StartCoroutine(gameManager.ShowLoadingPage("Loading...."));
             //gameManager.HomePage.SetActive(true);
             // gameManager.LoadingPage.SetActive(false);
             // gameManager.GamePage.SetActive(false);

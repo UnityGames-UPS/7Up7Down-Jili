@@ -43,30 +43,30 @@ public class Homepage : MonoBehaviour
     internal void SetInitHomedata(GameData gameData)
     {
 
-        if (Casualbutton)
-        {
+        // if (Casualbutton)
+        // {
 
-            Casualbutton.onClick.RemoveAllListeners();
-            Casualbutton.onClick.AddListener(() => OnClickARoom(gameData.levels[0]));
-        }
-        if (Novicebutton)
-        {
+        //     Casualbutton.onClick.RemoveAllListeners();
+        //     Casualbutton.onClick.AddListener(() => OnClickARoom(gameData.levels[0]));
+        // }
+        // if (Novicebutton)
+        // {
 
-            Novicebutton.onClick.RemoveAllListeners();
-            Novicebutton.onClick.AddListener(() => OnClickARoom(gameData.levels[1]));
-        }
-        if (Expertbutton)
-        {
+        //     Novicebutton.onClick.RemoveAllListeners();
+        //     Novicebutton.onClick.AddListener(() => OnClickARoom(gameData.levels[1]));
+        // }
+        // if (Expertbutton)
+        // {
 
-            Expertbutton.onClick.RemoveAllListeners();
-            Expertbutton.onClick.AddListener(() => OnClickARoom(gameData.levels[2]));
-        }
-        if (HighRollerbutton)
-        {
+        //     Expertbutton.onClick.RemoveAllListeners();
+        //     Expertbutton.onClick.AddListener(() => OnClickARoom(gameData.levels[2]));
+        // }
+        // if (HighRollerbutton)
+        // {
 
-            HighRollerbutton.onClick.RemoveAllListeners();
-            HighRollerbutton.onClick.AddListener(() => OnClickARoom(gameData.levels[3]));
-        }
+        //     HighRollerbutton.onClick.RemoveAllListeners();
+        //     HighRollerbutton.onClick.AddListener(() => OnClickARoom(gameData.levels[3]));
+        // }
 
         // CMinBet.text = gameData.bets.casual[0].ToString();
         // CMaxBet.text = gameData.bets.casual[gameData.bets.casual.Count - 1].ToString();
@@ -92,8 +92,8 @@ public class Homepage : MonoBehaviour
     }
     internal void setPlayerData(Player player)
     {
-        PlayerBalance.text = player.balance.ToString();
-        Playername.text = player.username.ToString();
+        // PlayerBalance.text = player.balance.ToString();
+        // Playername.text = player.username.ToString();
     }
 
 
@@ -101,10 +101,10 @@ public class Homepage : MonoBehaviour
 
     internal void OnClickARoom(string room)
     {
-        audioManager.PlayButtonAudio();
-        socketManager.SendRoomSelection(room);
-        gameManager.currentRoom = room;
-        gameManager.SetLoadingPage(true);
+        // audioManager.PlayButtonAudio();
+        // socketManager.SendRoomSelection(room);
+        // gameManager.currentRoom = room;
+        // gameManager.SetLoadingPage(true);
     }
 
 

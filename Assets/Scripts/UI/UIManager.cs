@@ -218,6 +218,8 @@ public class UiManager : MonoBehaviour
     [SerializeField] internal GameObject BetLimitPanel;
     [SerializeField] internal List<Button> LimitBtn;
     [SerializeField] internal Button OpenLimit;
+    [SerializeField] internal Sprite SelectedSprite;
+    [SerializeField] internal Sprite NotSelectedSprite;
 
     [SerializeField] internal Button MultiplayerBtn;
     [SerializeField] internal Button SinglePlayerBtn;
@@ -417,6 +419,7 @@ public class UiManager : MonoBehaviour
         HistoryRight.onClick.RemoveAllListeners();
         HistoryRight.onClick.AddListener(delegate { if (CurrentHistoryPage + 1 < MaxHistoryPage) socketManager.SendHistory(CurrentHistoryPage + 1); });
         MultiplayerBtn.interactable = false;
+        MultiplayerBtn.image.sprite = SelectedSprite;
     }
 
 
@@ -1221,6 +1224,8 @@ public class UiManager : MonoBehaviour
         gameManager.REsetAllBetObject();
         gameManager.ResetTimer();
         SetNetBetPanel(0);
+        SinglePlayerBtn.image.sprite = NotSelectedSprite;
+        MultiplayerBtn.image.sprite = SelectedSprite;
     }
     void OnSinglePlayerMode()
     {
@@ -1233,6 +1238,8 @@ public class UiManager : MonoBehaviour
         gameManager.isSinglePlayer = true;
         gameManager.REsetAllBetObject();
         SetNetBetPanel(0);
+        SinglePlayerBtn.image.sprite = SelectedSprite;
+        MultiplayerBtn.image.sprite = NotSelectedSprite;
     }
 
     internal void ToggleRepeteAuto(bool isAuto)
