@@ -87,7 +87,6 @@ public class OptionPrefab : MonoBehaviour
         // Update chip sprite based on the new total amount
         UpdatePlayerChipDisplay();
     }
-
     internal void AddOtherPlayerChip(int Amount, Sprite chipImg)
     {
         // Update total bet value for other players
@@ -97,12 +96,79 @@ public class OptionPrefab : MonoBehaviour
         if (OtherChipText != null)
         {
             OtherChipText.text = currentOtherPlayerBetValue.ToString();
+            if (currentOtherPlayerBetValue <= 0 && OtherChipText.text == "0")
+            {
+                // Optionally hide the bet display when zero
+            }
         }
 
         // Update chip sprite based on the new total amount
         UpdateOtherPlayerChipDisplay();
     }
 
+    internal void ResetPlayerUI()
+    {
+        // Reset ONLY player's bets, keep other players' bets
+        currentPlayerBetValue = 0;
+        currentPlayerDisplayedChipValue = 0;
+
+        if (MyBetText != null)
+        {
+            MyBetText.text = "0";
+            MyBetObj.SetActive(false);
+        }
+
+        if (PlayerChipImage != null)
+        {
+            PlayerChipImage.gameObject.SetActive(false);
+            PlayerChipImage.sprite = null;
+        }
+
+        if (PlayerChipText != null)
+        {
+            PlayerChipText.text = "0";
+        }
+
+        // DO NOT reset OtherPlayerChipImage or OtherChipText here
+    }
+
+    // private void UpdatePlayerChipDisplay()
+    // {
+    //     if (PlayerChipImage == null) return;
+
+    //     if (currentPlayerBetValue <= 0)
+    //     {
+    //         PlayerChipImage.gameObject.SetActive(false);
+    //         if (PlayerChipText != null) PlayerChipText.text = "0";
+    //         return;
+    //     }
+
+    //     // Get the appropriate chip denomination for the current total bet
+    //     int displayChipValue = GetChipDenominationForAmount(currentPlayerBetValue);
+
+    //     // Only update sprite if the displayed chip denomination changed
+    //     if (displayChipValue != currentPlayerDisplayedChipValue)
+    //     {
+    //         currentPlayerDisplayedChipValue = displayChipValue;
+
+    //         // Get the sprite for this denomination from GameManager
+    //         Sprite newSprite = gameManager.GetChipSpriteForAmount(displayChipValue, true);
+    //         PlayerChipImage.sprite = newSprite;
+    //         PlayerChipImage.gameObject.SetActive(true);
+
+    //         // Update the text to show the chip value
+    //         if (PlayerChipText != null)
+    //         {
+    //             PlayerChipText.text = displayChipValue.ToString();
+    //         }
+    //     }
+
+    //     // Always update the total bet text
+    //     if (PlayerChipText != null && PlayerChipText.text != currentPlayerBetValue.ToString())
+    //     {
+    //         PlayerChipText.text = currentPlayerBetValue.ToString();
+    //     }
+    // }
     private void UpdatePlayerChipDisplay()
     {
         if (PlayerChipImage == null) return;
@@ -111,6 +177,7 @@ public class OptionPrefab : MonoBehaviour
         {
             PlayerChipImage.gameObject.SetActive(false);
             if (PlayerChipText != null) PlayerChipText.text = "0";
+            currentPlayerDisplayedChipValue = 0;  // ← ADD THIS LINE
             return;
         }
 
@@ -243,5 +310,9 @@ public class OptionPrefab : MonoBehaviour
         {
             OtherChipText.text = "0";
         }
+    }
+    internal void RefreshChipDisplay()
+    {
+        UpdatePlayerChipDisplay();
     }
 }

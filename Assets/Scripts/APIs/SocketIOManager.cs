@@ -777,15 +777,16 @@ public class SocketIOManager : MonoBehaviour
         doubleBetData = JsonUtility.FromJson<Root>(json);
         if (doubleBetData.success)
         {
-            gameManager.UnduBets(doubleBetData.payload.bet.betId);
-            gameManager.UnduBets(doubleBetData.amount, doubleBetData.payload.betOption);
-
+            // Pass the betOption and amount from the undo response
+            gameManager.UnduBets(
+                doubleBetData.payload.bet.betId,
+                doubleBetData.payload.bet.betOption,
+                doubleBetData.payload.refundAmount
+            );
 
             gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
             playerdata.balance = doubleBetData.payload.balance;
             gameManager.currentTotalBet = doubleBetData.payload.totalBet;
-
-            //  if (doubleBetData.payload.totalBet == 0) uiManager.SetChipoption(false);
         }
     }
     void OnRoomEnter(string json)

@@ -15,7 +15,7 @@ public class StatsPrefab : MonoBehaviour
     [SerializeField] internal Image DiceOne;
     [SerializeField] internal Image DiceTwo;
     [SerializeField] internal GameObject Star;
-    internal int winColor;
+    internal int WinStats;
     internal string winner;
 
     internal void SetData(string diceTotal, Sprite diceOne, Sprite diceTwo, Sprite colorindex, bool isStar, bool isHighLited)
@@ -27,6 +27,7 @@ public class StatsPrefab : MonoBehaviour
         if (Star) Star.SetActive(isStar);
 
         WinColor.sprite = colorindex;
+        // WinStats = int.Parse(diceTotal);
     }
     internal void CopyFrom(StatsPrefab other)
     {

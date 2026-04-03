@@ -180,8 +180,10 @@ public class UiManager : MonoBehaviour
     [SerializeField] private GameObject StatsPref;
     [SerializeField] private Transform StatsParent;
     [SerializeField] private Image FillAb;
-    [SerializeField] private TMP_Text AndarPercentage;
-    [SerializeField] private TMP_Text BaharPercentage;
+    [SerializeField] private TMP_Text TwoSixPercentage;
+    [SerializeField] private TMP_Text SevenPercentage;
+    [SerializeField] private TMP_Text EightTwelvePercentage;
+    [SerializeField] private TMP_Text TotalRounds;
     [SerializeField] internal List<Sprite> DiceSprites;
     [SerializeField] internal List<Sprite> Resultcolor;
     // Add these fields to your class
@@ -405,12 +407,12 @@ public class UiManager : MonoBehaviour
         Doublebtn.onClick.AddListener(delegate { socketManager.SendDouble(); });
 
         AutoBtn.onClick.RemoveAllListeners();
-        AutoBtn.onClick.AddListener(delegate { gameManager.isAuto = true; AutoBtn.gameObject.SetActive(false); });
+        AutoBtn.onClick.AddListener(delegate { gameManager.isAuto = true; StartBtn.interactable = false; AutoBtn.gameObject.SetActive(false); StopAutoBtn.gameObject.SetActive(true); Repeatbtn.gameObject.SetActive(false); });
         StartBtn.onClick.RemoveAllListeners();
         StartBtn.onClick.AddListener(delegate { socketManager.SendStart(); });
 
         StopAutoBtn.onClick.RemoveAllListeners();
-        StopAutoBtn.onClick.AddListener(delegate { gameManager.isAuto = false; AutoBtn.gameObject.SetActive(true); });
+        StopAutoBtn.onClick.AddListener(delegate { gameManager.isAuto = false; StartBtn.interactable = true; Repeatbtn.gameObject.SetActive(true); ToggleRepeteAuto(false); });
 
 
         HistoryLeft.onClick.RemoveAllListeners();
@@ -918,6 +920,7 @@ public class UiManager : MonoBehaviour
         UpdateLineStats(diceTotal.ToString(), diceOne, diceTwo, colorindex, isStar);
         UpdateGridStats(diceTotal.ToString(), colorindex, isStar);
         AddToVerticalGrid(diceTotal, colorindex, isStar);
+        CalculateAndShowPercentage();
 
     }
 
@@ -1057,29 +1060,35 @@ public class UiManager : MonoBehaviour
         //  Debug.Log($"[Percentage] Total Stats = {total}");
         if (total == 0) return;
 
-        int andarCount = 0;
-        int baharCount = 0;
+        int seven = 0;
+        int two = 0;
+        int eight = 0;
 
         foreach (var s in stats)
         {
             //  Debug.Log($"[Percentage] Card={s.cardnumber.text}, winner={s.winner}");
 
-            if (s.winner == "andar")
-                andarCount++;
+            if (s.WinStats == 7)
+                seven++;
 
-            else if (s.winner == "bahar")
-                baharCount++;
+            else if (s.WinStats > 7)
+                two++;
+            else
+                eight++;
         }
 
         //  Debug.Log($"[Percentage] Andar={andarCount}, Bahar={baharCount}");
 
-        float andarPercent = (andarCount * 100f) / total;
-        float baharPercent = (baharCount * 100f) / total;
+        float twoP = (two * 100f) / total;
+        float sevenP = (seven * 100f) / total;
+        float eightP = (eight * 100f) / total;
 
-        AndarPercentage.text = andarPercent.ToString("0") + "%";
-        BaharPercentage.text = baharPercent.ToString("0") + "%";
+        TwoSixPercentage.text = twoP.ToString("0") + "%";
+        SevenPercentage.text = sevenP.ToString("0") + "%";
+        EightTwelvePercentage.text = eightP.ToString("0") + "%";
+        TotalRounds.text = "Calculated from last " + total.ToString() + " rounds.";
 
-        FillAb.fillAmount = andarPercent / 100f;
+
     }
 
 
@@ -1130,13 +1139,13 @@ public class UiManager : MonoBehaviour
     // }
 
 
-    private List<StatsPrefab> GetStats()
+    private List<DiceStatsPrefab> GetStats()
     {
-        List<StatsPrefab> list = new List<StatsPrefab>();
+        List<DiceStatsPrefab> list = new List<DiceStatsPrefab>();
 
         for (int i = 0; i < StatsParent.childCount; i++)
         {
-            var s = StatsParent.GetChild(i).GetComponent<StatsPrefab>();
+            var s = StatsParent.GetChild(i).GetComponent<DiceStatsPrefab>();
             if (s != null && s.gameObject.activeSelf)
                 list.Add(s);
         }
@@ -1152,13 +1161,17 @@ public class UiManager : MonoBehaviour
 
     internal void SetNetBetPanel(int totalbet)
     {
-        currentNetBet += totalbet; // add or subtract automatically
-
+        Debug.Log("7777AddingAmount" + totalbet);
+        if (totalbet == 0) currentNetBet = 0;
+        else
+        {
+            currentNetBet += totalbet; // add or subtract automatically
+        }
         // Clamp to 0 (no negative values)
         if (currentNetBet < 0)
             currentNetBet = 0;
 
-        NetBet.text = currentNetBet.ToString();
+        NetBet.text = "Rs" + currentNetBet.ToString();
     }
     internal void SetChipoption(bool istrue, bool db = true, bool canc = true, bool undo = true)
     {
@@ -1202,7 +1215,15 @@ public class UiManager : MonoBehaviour
 
 
     #endregion
+    internal void HideBetLimitPanel()
+    {
+        isOpen = false;
 
+        Transform target = isOpen ? openPosition : closedPosition;
+
+        BetLimitPanel.transform.DOMove(target.position, 0.3f)
+            .SetEase(isOpen ? Ease.OutCubic : Ease.InCubic);
+    }
     void ToggleBetLimitPanel()
     {
         isOpen = !isOpen;

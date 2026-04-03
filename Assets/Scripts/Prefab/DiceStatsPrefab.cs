@@ -13,6 +13,7 @@ public class DiceStatsPrefab : MonoBehaviour
     public int colorIndex;
     internal bool winner;
     internal string diceTotals;
+    internal int WinStats;
     internal void SetData(string diceTotal, Sprite winColor, bool isStar)
     {
         DiceTotal.text = diceTotal;
@@ -21,6 +22,7 @@ public class DiceStatsPrefab : MonoBehaviour
 
         WinColor.sprite = winColor;
         winner = isStar;
+        WinStats = int.Parse(diceTotal ?? "0");
     }
     // internal void CopyFrom(StatsPrefab other)
     // {
