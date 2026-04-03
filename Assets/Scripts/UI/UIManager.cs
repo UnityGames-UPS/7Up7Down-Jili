@@ -60,7 +60,7 @@ public class UiManager : MonoBehaviour
 
 
     [Header("Game Rules")]
-    [SerializeField] private List<TMP_Text> PayoutText;
+    [SerializeField] internal List<TMP_Text> PayoutText;
     [SerializeField] private GameObject LeaderBoard;
     [SerializeField] private GameObject Diamond;
 
@@ -229,6 +229,13 @@ public class UiManager : MonoBehaviour
     [SerializeField] private Transform openPosition;
     [SerializeField] private Transform closedPosition;
 
+    [Header("Menu Panel")]
+    [SerializeField] private float slideDuration = 0.3f;
+    private bool isAnimating = false;
+    private Vector3 originalPosition;
+
+    private RectTransform buttonRect;
+
     private bool isOpen = false;
 
     private int uiSelectedCoin = 0;
@@ -340,10 +347,10 @@ public class UiManager : MonoBehaviour
         if (HighRollerGame_button) HighRollerGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
 
         if (Info_button) Info_button.onClick.RemoveAllListeners();
-        if (Info_button) Info_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); MenuPanel_Object.SetActive(false); });
+        if (Info_button) Info_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
 
         if (History_button) History_button.onClick.RemoveAllListeners();
-        if (History_button) History_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); HistorypageOpen(); MenuPanel_Object.SetActive(false); });
+        if (History_button) History_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); HistorypageOpen(); });
 
         if (Sound_button) Sound_button.onClick.RemoveAllListeners();
         if (Sound_button) Sound_button.onClick.AddListener(delegate { ToggleSound(); });
@@ -395,24 +402,66 @@ public class UiManager : MonoBehaviour
         if (SinglePlayerBtn) SinglePlayerBtn.onClick.AddListener(delegate { OnSinglePlayerMode(); MultiplayerBtn.interactable = true; SinglePlayerBtn.interactable = false; });
 
         Repeatbtn.onClick.RemoveAllListeners();
-        Repeatbtn.onClick.AddListener(delegate { socketManager.SendRepeat(); });
+        Repeatbtn.onClick.AddListener(delegate
+        {
+            Repeatbtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        Repeatbtn.transform.DOScale(1f, 0.1f);
+    }); socketManager.SendRepeat();
+        });
 
         Undubtn.onClick.RemoveAllListeners();
-        Undubtn.onClick.AddListener(delegate { socketManager.SendUndo(); });
+        Undubtn.onClick.AddListener(delegate
+        {
+            Undubtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        Undubtn.transform.DOScale(1f, 0.1f);
+    }); socketManager.SendUndo();
+        });
 
         Canclebtn.onClick.RemoveAllListeners();
-        Canclebtn.onClick.AddListener(delegate { socketManager.SendCancle(); });
+        Canclebtn.onClick.AddListener(delegate
+        {
+            Canclebtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        Canclebtn.transform.DOScale(1f, 0.1f);
+    }); socketManager.SendCancle();
+        });
 
         Doublebtn.onClick.RemoveAllListeners();
-        Doublebtn.onClick.AddListener(delegate { socketManager.SendDouble(); });
+        Doublebtn.onClick.AddListener(delegate
+        {
+            Doublebtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        Doublebtn.transform.DOScale(1f, 0.1f);
+    }); socketManager.SendDouble();
+        });
 
         AutoBtn.onClick.RemoveAllListeners();
-        AutoBtn.onClick.AddListener(delegate { gameManager.isAuto = true; StartBtn.interactable = false; AutoBtn.gameObject.SetActive(false); StopAutoBtn.gameObject.SetActive(true); Repeatbtn.gameObject.SetActive(false); });
+        AutoBtn.onClick.AddListener(delegate
+        {
+            AutoBtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        AutoBtn.transform.DOScale(1f, 0.1f);
+    }); gameManager.isAuto = true; StartBtn.interactable = false; AutoBtn.gameObject.SetActive(false); StopAutoBtn.gameObject.SetActive(true); Repeatbtn.gameObject.SetActive(false);
+        });
         StartBtn.onClick.RemoveAllListeners();
-        StartBtn.onClick.AddListener(delegate { socketManager.SendStart(); });
+        StartBtn.onClick.AddListener(delegate
+        {
+            StartBtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        StartBtn.transform.DOScale(1f, 0.1f);
+    }); socketManager.SendStart();
+        });
 
         StopAutoBtn.onClick.RemoveAllListeners();
-        StopAutoBtn.onClick.AddListener(delegate { gameManager.isAuto = false; StartBtn.interactable = true; Repeatbtn.gameObject.SetActive(true); ToggleRepeteAuto(false); });
+        StopAutoBtn.onClick.AddListener(delegate
+        {
+            StopAutoBtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
+    {
+        StopAutoBtn.transform.DOScale(1f, 0.1f);
+    }); gameManager.isAuto = false; StartBtn.interactable = true; Repeatbtn.gameObject.SetActive(true); ToggleRepeteAuto(false);
+        });
 
 
         HistoryLeft.onClick.RemoveAllListeners();
@@ -422,6 +471,10 @@ public class UiManager : MonoBehaviour
         HistoryRight.onClick.AddListener(delegate { if (CurrentHistoryPage + 1 < MaxHistoryPage) socketManager.SendHistory(CurrentHistoryPage + 1); });
         MultiplayerBtn.interactable = false;
         MultiplayerBtn.image.sprite = SelectedSprite;
+
+
+
+        buttonRect = MenuMain_button.GetComponent<RectTransform>();
     }
 
 
@@ -431,7 +484,7 @@ public class UiManager : MonoBehaviour
 
     public void ResetMenuPanel(bool IsGameScreen)
     {
-        MenuPanel_Object.SetActive(false);
+        // MenuPanel_Object.SetActive(false);
         if (IsGameScreen)
         {
             Homebutton_Object.SetActive(true);
@@ -454,18 +507,95 @@ public class UiManager : MonoBehaviour
         }
     }
 
+
     public void ToggleMenuPanel()
     {
+        if (isAnimating) return;
+
         if (IsMenuPanelOpen)
         {
-            MenuPanel_Object.SetActive(false);
-            IsMenuPanelOpen = false;
+            CloseMenuPanel();
         }
         else
         {
-            MenuPanel_Object.SetActive(true);
-            IsMenuPanelOpen = true;
+            OpenMenuPanel();
         }
+    }
+
+    private void OpenMenuPanel()
+    {
+        if (isAnimating) return;
+        StartCoroutine(SlideIn());
+    }
+
+    private void CloseMenuPanel()
+    {
+        if (isAnimating) return;
+        StartCoroutine(SlideOut());
+    }
+
+    private IEnumerator SlideIn()
+    {
+        isAnimating = true;
+        MenuPanel_Object.SetActive(true);
+
+        // Slide Menu Panel: from -1200 to -800 (moving RIGHT)
+        Vector3 panelStartPos = new Vector3(-1200, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
+        Vector3 panelEndPos = new Vector3(-800, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
+        MenuPanel_Object.transform.localPosition = panelStartPos;
+
+        // Slide Menu Button: from 0 to -80 (moving LEFT - opposite direction)
+        Vector2 buttonStartPos = new Vector2(0, buttonRect.anchoredPosition.y);
+        Vector2 buttonEndPos = new Vector2(-80, buttonRect.anchoredPosition.y);
+        buttonRect.anchoredPosition = buttonStartPos;
+
+        float elapsed = 0;
+        while (elapsed < slideDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / slideDuration;
+
+            MenuPanel_Object.transform.localPosition = Vector3.Lerp(panelStartPos, panelEndPos, t);
+            buttonRect.anchoredPosition = Vector2.Lerp(buttonStartPos, buttonEndPos, t);
+
+            yield return null;
+        }
+
+        MenuPanel_Object.transform.localPosition = panelEndPos;
+        buttonRect.anchoredPosition = buttonEndPos;
+        IsMenuPanelOpen = true;
+        isAnimating = false;
+    }
+
+    private IEnumerator SlideOut()
+    {
+        isAnimating = true;
+
+        // Slide Menu Panel: from -800 to -1200 (moving LEFT)
+        Vector3 panelStartPos = new Vector3(-800, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
+        Vector3 panelEndPos = new Vector3(-1200, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
+
+        // Slide Menu Button: from -80 to 0 (moving RIGHT - opposite direction)
+        Vector2 buttonStartPos = new Vector2(-80, buttonRect.anchoredPosition.y);
+        Vector2 buttonEndPos = new Vector2(0, buttonRect.anchoredPosition.y);
+
+        float elapsed = 0;
+        while (elapsed < slideDuration)
+        {
+            elapsed += Time.deltaTime;
+            float t = elapsed / slideDuration;
+
+            MenuPanel_Object.transform.localPosition = Vector3.Lerp(panelStartPos, panelEndPos, t);
+            buttonRect.anchoredPosition = Vector2.Lerp(buttonStartPos, buttonEndPos, t);
+
+            yield return null;
+        }
+
+        MenuPanel_Object.transform.localPosition = panelEndPos;
+        buttonRect.anchoredPosition = buttonEndPos;
+        MenuPanel_Object.SetActive(false);
+        IsMenuPanelOpen = false;
+        isAnimating = false;
     }
 
     internal void SetgameRulePanel()
@@ -594,7 +724,7 @@ public class UiManager : MonoBehaviour
         // Try to find TextMeshPro component
         return button.GetComponentInChildren<TMP_Text>();
     }
-    private string FormatNumber(int number)
+    internal string FormatNumber(int number)
     {
         if (number >= 1000)
         {
@@ -859,6 +989,10 @@ public class UiManager : MonoBehaviour
         int tempIndex = selectorChip.chipIndex;
         selectorChip.chipIndex = selectedChip.chipIndex;
         selectedChip.chipIndex = tempIndex;
+
+        string tempchip = selectorChip.chipAmount;
+        selectorChip.chipAmount = selectedChip.chipAmount;
+        selectedChip.chipAmount = tempchip;
 
         // ADD THIS LINE - Update the selected coin index
         uiSelectedCoin = newSelectedIndex;

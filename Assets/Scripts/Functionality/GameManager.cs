@@ -257,15 +257,22 @@ public class GameManager : MonoBehaviour
 
         if (data == null) return;
 
-        uiManager.coinSelector.Chiptext.text = data[0].ToString();
+        uiManager.coinSelector.Chiptext.text = uiManager.FormatNumber(data[0]);
+        uiManager.coinSelector.chipAmount = data[0].ToString();
         uiManager.coinSelector.chipIndex = 0;
-        minBet_text.text = data[0].ToString();
-        maxBet_text.text = data[data.Count - 1].ToString();
+        minBet_text.text = uiManager.FormatNumber(data[0]);
+        maxBet_text.text = uiManager.FormatNumber(data[data.Count - 1]);
+        foreach (var txt in uiManager.PayoutText)
+        {
+            txt.text = data[data.Count - 1].ToString();
+
+        }
 
         for (int i = 0; i < uiManager.Coins.Count; i++)
         {
-            uiManager.Coins[i].Chiptext.text = data[i].ToString();
+            uiManager.Coins[i].Chiptext.text = uiManager.FormatNumber(data[i]);
             uiManager.Coins[i].chipIndex = i;
+            uiManager.Coins[i].chipAmount = data[i].ToString();
         }
 
     }
@@ -428,6 +435,24 @@ public class GameManager : MonoBehaviour
     }
     internal void OnGameLoopStart()
     {
+        foreach (var item in PlayerChips)
+        {
+            if (item.chip != null)
+            {
+                ReturnChip(item.chip.GetComponent<Chip>());
+            }
+        }
+        PlayerChips.Clear();
+
+        // Clear other players' chips
+        foreach (var item in OtherPlayerChips)
+        {
+            if (item.chip != null)
+            {
+                ReturnChip(item.chip.GetComponent<Chip>());
+            }
+        }
+        OtherPlayerChips.Clear();
         REsetAllBetObject();
         audioManager.PlayWLAudio("betNow");
         Plesebetnow.StopAnimation();
@@ -826,7 +851,7 @@ public class GameManager : MonoBehaviour
 
         int index = uiManager.coinSelector.chipIndex;
         double chipValue;
-        if (double.TryParse(uiManager.coinSelector.Chiptext.text, out chipValue))
+        if (double.TryParse(uiManager.coinSelector.chipAmount, out chipValue))
         {
             if (chipValue > socketManager.playerdata.balance)
             {

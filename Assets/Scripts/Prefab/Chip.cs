@@ -10,11 +10,13 @@ public class Chip : MonoBehaviour
     [SerializeField] internal TMP_Text Chiptext;
 
     internal int chipIndex;
+    internal string chipAmount;
 
     internal void SetData(Sprite chip, string amount, int ChipIndex)
     {
         chipImage.sprite = chip;
         Chiptext.text = amount;
         chipIndex = ChipIndex;
+        chipAmount = amount;
     }
 }

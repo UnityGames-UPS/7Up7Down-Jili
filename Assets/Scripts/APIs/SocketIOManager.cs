@@ -17,6 +17,8 @@ public class SocketIOManager : MonoBehaviour
 {
     [SerializeField]
     internal GameManager gameManager;
+    [SerializeField]
+    internal Homepage homepage;
 
     [SerializeField]
     private UiManager uiManager;
@@ -508,8 +510,10 @@ public class SocketIOManager : MonoBehaviour
         playerdata = myData.player;
 
         setInitialData();
-        gameManager.currentRoom = initialData.levels[0];
-        SendRoomSelection(initialData.levels[0]);
+
+        homepage.canLoadFull = true;
+        // gameManager.currentRoom = initialData.levels[0];
+        // SendRoomSelection(initialData.levels[0]);
         // if (initialData.bets != null)
         // else
         //     Debug.LogWarning("initData: bets list is null.");
@@ -569,7 +573,7 @@ public class SocketIOManager : MonoBehaviour
     {
         double chipValue;
 
-        if (double.TryParse(uiManager.coinSelector.Chiptext.text, out chipValue))
+        if (double.TryParse(uiManager.coinSelector.chipAmount, out chipValue))
         {
             Debug.Log("XXXXXXXX" + chipValue + "    " + playerdata.balance);
             if (chipValue > playerdata.balance)
@@ -802,9 +806,11 @@ public class SocketIOManager : MonoBehaviour
             return;
 
         }
+        gameManager.HomePage.SetActive(false);
         gameManager.SetCoinData();
         uiManager.SetgameRulePanel();
         gameManager.SetOtherplayerData(roomData.payload.leaderboards);
+        // homepage.canLoadFull = true;
     }
     void OnModeChange(string json)
     {
