@@ -307,37 +307,37 @@ public class GameManager : MonoBehaviour
         string mainPlayerName = uiManager.MainPlayers.playername.text;
         Sprite mainPlayerIcon = uiManager.MainPlayers.PlayerIcon.sprite;
 
-        // ------------------- RICHEST -------------------
-        if (leaderboard.richest == null || leaderboard.richest.Count == 0)
-        {
-            Debug.Log("richest is null");
-            foreach (var item in uiManager.RichestPlayers)
-                item.gameObject.SetActive(false);
+        // // ------------------- RICHEST -------------------
+        // if (leaderboard.richest == null || leaderboard.richest.Count == 0)
+        // {
+        //     Debug.Log("richest is null");
+        //     foreach (var item in uiManager.RichestPlayers)
+        //         item.gameObject.SetActive(false);
 
-            return;
-        }
+        //     return;
+        // }
 
-        foreach (var item in uiManager.RichestPlayers)
-            item.gameObject.SetActive(false);
+        // foreach (var item in uiManager.RichestPlayers)
+        //     item.gameObject.SetActive(false);
 
-        int richestCount = Mathf.Min(leaderboard.richest.Count, uiManager.RichestPlayers.Count);
+        // int richestCount = Mathf.Min(leaderboard.richest.Count, uiManager.RichestPlayers.Count);
 
-        for (int i = 0; i < richestCount; i++)
-        {
-            Richest rich = leaderboard.richest[i];
+        // for (int i = 0; i < richestCount; i++)
+        // {
+        //     Richest rich = leaderboard.richest[i];
 
-            // ✔ Use player's own icon if usernames match
-            Sprite iconToUse = (rich.username == mainPlayerName)
-                ? mainPlayerIcon
-                : uiManager.UserIcons[UnityEngine.Random.Range(0, uiManager.UserIcons.Count)];
+        //     // ✔ Use player's own icon if usernames match
+        //     Sprite iconToUse = (rich.username == mainPlayerName)
+        //         ? mainPlayerIcon
+        //         : uiManager.UserIcons[UnityEngine.Random.Range(0, uiManager.UserIcons.Count)];
 
-            uiManager.RichestPlayers[i].SetData(
-                rich.username,
-                rich.balance.ToString(),
-                iconToUse
-            );
-            uiManager.RichestPlayers[i].gameObject.SetActive(true);
-        }
+        //     uiManager.RichestPlayers[i].SetData(
+        //         rich.username,
+        //         rich.balance.ToString(),
+        //         iconToUse
+        //     );
+        //     uiManager.RichestPlayers[i].gameObject.SetActive(true);
+        // }
 
         // ------------------- WINNERS -------------------
         if (leaderboard.winners == null || leaderboard.winners.Count == 0)
@@ -1881,7 +1881,12 @@ public class GameManager : MonoBehaviour
     {
 
     }
-
+    internal void ManageBonus()
+    {
+        // Transform spawnPos = FindOption(socketManager.BonusData.bonus).gameObject.transform;
+        // BonusObject.transform.position = spawnPos.position;
+        // BonusObject.gameObject.SetActive(true);
+    }
 
 }
 

@@ -27,7 +27,7 @@ public class UiManager : MonoBehaviour
     [SerializeField] private Button ExpertGame_button;
     [SerializeField] private Button HighRollerGame_button;
 
-    [Header("Andar Bahar")]
+    [Header("info page")]
     [SerializeField] private Button MenuInGame_button;
     [SerializeField] private Button History_button;
     [SerializeField] private Button Info_button;
@@ -370,7 +370,7 @@ public class UiManager : MonoBehaviour
         if (Exit_Button) Exit_Button.onClick.AddListener(delegate { OpenPopup(QuitPopup_Object); });
 
         if (YesHome_button) YesHome_button.onClick.RemoveAllListeners();
-        if (YesHome_button) YesHome_button.onClick.AddListener(delegate { ClosePopup(GameQuitPopup); IsMenuPanelOpen = false; socketManager.SendHome(); ResetMenuPanel(false); });
+        if (YesHome_button) YesHome_button.onClick.AddListener(delegate { ClosePopup(GameQuitPopup); socketManager.SendHome(); ResetMenuPanel(false); });
 
         if (NoHome_button) NoHome_button.onClick.RemoveAllListeners();
         if (NoHome_button) NoHome_button.onClick.AddListener(delegate { ClosePopup(GameQuitPopup); });
@@ -382,10 +382,10 @@ public class UiManager : MonoBehaviour
         if (InfoRight_button) InfoRight_button.onClick.AddListener(delegate { GoToNextInfoPage(); });
 
         if (InfoClose_button) InfoClose_button.onClick.RemoveAllListeners();
-        if (InfoClose_button) InfoClose_button.onClick.AddListener(delegate { ClosePopup(InfoPopup_Object); IsMenuPanelOpen = false; });
+        if (InfoClose_button) InfoClose_button.onClick.AddListener(delegate { ClosePopup(InfoPopup_Object); });
 
         if (HistoryClose_button) HistoryClose_button.onClick.RemoveAllListeners();
-        if (HistoryClose_button) HistoryClose_button.onClick.AddListener(delegate { ClosePopup(HistoryPopup_Object); IsMenuPanelOpen = false; });
+        if (HistoryClose_button) HistoryClose_button.onClick.AddListener(delegate { ClosePopup(HistoryPopup_Object); });
         if (OpenRoadMapBtn) OpenRoadMapBtn.onClick.RemoveAllListeners();
         if (OpenRoadMapBtn) OpenRoadMapBtn.onClick.AddListener(delegate { OpenPopup(RoadMapPopup); });
         if (OpenRoadMapBtn2) OpenRoadMapBtn2.onClick.RemoveAllListeners();

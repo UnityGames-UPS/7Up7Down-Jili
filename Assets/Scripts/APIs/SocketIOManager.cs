@@ -35,6 +35,7 @@ public class SocketIOManager : MonoBehaviour
     internal Root TotalPlayerCountData;
     internal Root TimeRemaining;
     internal Root CardDelt;
+    internal Root BonusData;
     internal Root FlushData;
     internal GameData initialData = null;
     // internal Payload resultData = null;
@@ -207,6 +208,7 @@ public class SocketIOManager : MonoBehaviour
         gameSocket.On<string>("game:lobby_count", OnLobbyCount);
         gameSocket.On<string>("game:betting_timer", OnListenTimeEvent);
         gameSocket.On<string>("game:dice_result", OnListenCardEvent);
+        gameSocket.On<string>("game:bonus", OnGameBonus);
         gameSocket.On<bool>("socketState", OnSocketState);
         gameSocket.On<string>("internalError", OnSocketError);
         gameSocket.On<string>("alert", OnSocketAlert);
@@ -274,7 +276,14 @@ public class SocketIOManager : MonoBehaviour
         gameManager.ManageResult(CardDelt);
     }
 
+    void OnGameBonus(string data)
+    {
+        Debug.Log("[BROADCAST] game:bonus : " + data);
+        BonusData = JsonUtility.FromJson<Root>(data);
 
+        gameManager.ManageBonus();
+
+    }
     private void OnSocketState(bool state)
     {
         if (state)

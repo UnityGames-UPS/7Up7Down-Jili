@@ -512,15 +512,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 0
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: e9580c72cb5614f559c009331a348029, type: 2}
-  m_sharedMaterial: {fileID: -93530186763230637, guid: e9580c72cb5614f559c009331a348029, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a8179ae2f43e34441afbbf780b250d9b, type: 2}
+  m_sharedMaterial: {fileID: -1916196349092564091, guid: a8179ae2f43e34441afbbf780b250d9b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4010164992
-  m_fontColor: {r: 0, g: 0.26415092, b: 0.023641683, a: 0.9372549}
+    rgba: 4248723482
+  m_fontColor: {r: 0.10145959, g: 0.3773585, b: 0.24294621, a: 0.99215686}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -529,7 +529,7 @@ MonoBehaviour:
     bottomLeft: {r: 1, g: 1, b: 1, a: 1}
     bottomRight: {r: 1, g: 1, b: 1, a: 1}
   m_fontColorGradientPreset: {fileID: 0}
-  m_spriteAsset: {fileID: 11400000, guid: e21e35a99cb704336b5078469a1951dc, type: 2}
+  m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
   m_TextStyleHashCode: -1183493901
@@ -537,8 +537,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 73.2
-  m_fontSizeBase: 73.2
+  m_fontSize: 73
+  m_fontSizeBase: 73
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -1066,15 +1066,15 @@ MonoBehaviour:
       m_Calls: []
   m_text: 1:3.4
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 831a2bea3d44a4b7898231d22ecc9ed3, type: 2}
-  m_sharedMaterial: {fileID: -5546211151669796150, guid: 831a2bea3d44a4b7898231d22ecc9ed3, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: a8179ae2f43e34441afbbf780b250d9b, type: 2}
+  m_sharedMaterial: {fileID: -1916196349092564091, guid: a8179ae2f43e34441afbbf780b250d9b, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4278600448
-  m_fontColor: {r: 0, g: 0.26415092, b: 0.023641683, a: 1}
+    rgba: 4248723482
+  m_fontColor: {r: 0.10145959, g: 0.3773585, b: 0.24294621, a: 0.99215686}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -1097,7 +1097,7 @@ MonoBehaviour:
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 256
   m_textAlignment: 65535
