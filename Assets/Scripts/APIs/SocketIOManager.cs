@@ -279,9 +279,11 @@ public class SocketIOManager : MonoBehaviour
     void OnGameBonus(string data)
     {
         Debug.Log("[BROADCAST] game:bonus : " + data);
-        BonusData = JsonUtility.FromJson<Root>(data);
-
-        gameManager.ManageBonus();
+        BonusData = JsonConvert.DeserializeObject<Root>(data);
+        foreach (var b in BonusData.bonus)
+        {
+            gameManager.ManageBonus(b.Value, b.Key);
+        }
 
     }
     private void OnSocketState(bool state)
@@ -1210,7 +1212,7 @@ public class Root
     public int dice2;
     public int sum;
 
-
+    public Dictionary<string, int> bonus;
     public List<Card> cards;
     public Leaderboards leaderboards;
 

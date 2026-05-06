@@ -9,6 +9,8 @@ public class PlayerData : MonoBehaviour
     [SerializeField] internal Image PlayerIcon;
     [SerializeField] internal TMP_Text playername;
     [SerializeField] internal TMP_Text playerBalence;
+    [SerializeField] internal Button Leaderboardbtn;
+    [SerializeField] internal ImageAnimation purpleCircle;
     [SerializeField] internal string PlayerId;
 
     internal void SetData(string idz, string balance, Sprite icon)
@@ -19,5 +21,6 @@ public class PlayerData : MonoBehaviour
         playername.text = PlayerId;
         playerBalence.text = balance;
     }
+
 
 }

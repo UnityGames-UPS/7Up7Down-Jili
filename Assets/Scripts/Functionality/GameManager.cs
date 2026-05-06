@@ -115,6 +115,11 @@ public class GameManager : MonoBehaviour
     [SerializeField] private ImageAnimation Extrapay;
     [SerializeField] private ImageAnimation Betlocked;
     [SerializeField] private ImageAnimation Plesebetnow;
+    [SerializeField] internal List<int> LeaderboadrdShow = new List<int>();
+
+    [Header("Extra Pay ")]
+    [SerializeField] private GameObject ExtarPayObject;
+    [SerializeField] private GameObject Bonusparent;
     public float popScale = 1.15f;
     public float animTime = 0.15f;
 
@@ -134,7 +139,7 @@ public class GameManager : MonoBehaviour
 
 
     private List<ChipData> PlayerChips = new List<ChipData>();
-    private List<ChipData> OtherPlayerChips = new List<ChipData>();
+    internal List<ChipData> OtherPlayerChips = new List<ChipData>();
 
 
     void Awake()
@@ -461,12 +466,14 @@ public class GameManager : MonoBehaviour
 
         if (isAuto) socketManager.SendRepeat();
         else uiManager.ToggleRepeteAuto(false);
+        ResetBonusUI();
     }
     private Tween timerTween;
     private int maxBetTime = -1;
     private int lastTime = int.MaxValue;
     public void StartBetTimer(int time)
     {
+        ResetBonusUI();
         CircleTimerFill.gameObject.transform.parent.gameObject.SetActive(true);
         // First packet decides max timer
         if (maxBetTime == -1)
@@ -948,50 +955,23 @@ public class GameManager : MonoBehaviour
             }
         }
 
-        //  audioManager.PlayWLAudio("double");
+
+    }
+    void ShowtheOtherPlayer()
+    {
+        foreach (var chip in OtherPlayerChips)
+        {
+            foreach (int index in LeaderboadrdShow)
+            {
+                if (chip.username == uiManager.WinnerPlayers[index].playername.text)
+                {
+                    OptionPrefab op = chip.betOptionK;
+                    op.PurpleBorderAnimation.gameObject.SetActive(true);
+                }
+            }
+        }
     }
 
-    // internal void ManageBrodcastBetsOtherPlayers(Root chipdata)
-    // {
-    //     if (chipdata.amount < 0)
-    //     {
-    //         ClearOtherPlayerbets(chipdata);
-
-    //         return;
-    //     }
-    //     // Do not show own chip here
-    //     if (chipdata.username == uiManager.MainPlayers.playername.text)
-    //         return;
-
-    //     List<int> roomChips = FindRoom();
-    //     int totalAmount = chipdata.amount;
-
-    //     // Break large amount into individual chips
-    //     List<int> chipPieces = BreakAmountIntoChips(totalAmount, roomChips);
-
-    //     foreach (int piece in chipPieces)
-    //     {
-    //         int index = findChipindex(piece, roomChips);
-
-    //         string val = piece.ToString();
-
-    //         ChipData data = new ChipData();
-    //         data.betId = chipdata.betId;
-    //         data.amount = piece;
-
-    //         data.chip = SpawnChip(
-    //             findOtherPlayerChipSprite(piece, roomChips),
-    //             val,
-    //             index,
-    //             TotalPlayer_text.transform,
-    //             FindOption(chipdata.betOption),
-    //             false
-    //         );
-
-    //         OtherPlayerChips.Add(data);
-
-    //     }
-    // }
     internal void ManageBrodcastBetsOtherPlayers(Root chipdata)
     {
         // Handle cancellation (negative amount)
@@ -1030,9 +1010,10 @@ public class GameManager : MonoBehaviour
                 FindOption(chipdata.betOption),
                 false
             );
-
+            data.betOptionK = FindOption(chipdata.betOption);
             OtherPlayerChips.Add(data);
         }
+        ShowtheOtherPlayer();
     }
     void ClearOtherPlayerbets(Root chipdata)
     {
@@ -1741,7 +1722,7 @@ public class GameManager : MonoBehaviour
         return data;
     }
 
-    OptionPrefab FindOption(string opt)
+    internal OptionPrefab FindOption(string opt)
     {
         // Debug.Log("789 _____________" + opt);
         switch (opt)
@@ -1881,13 +1862,25 @@ public class GameManager : MonoBehaviour
     {
 
     }
-    internal void ManageBonus()
+    internal void ManageBonus(int amount, string option)
     {
-        // Transform spawnPos = FindOption(socketManager.BonusData.bonus).gameObject.transform;
-        // BonusObject.transform.position = spawnPos.position;
-        // BonusObject.gameObject.SetActive(true);
+        Debug.Log("[BROADCAST] game:bonus : " + option);
+        Transform spawnPos = FindOption(option).gameObject.transform;
+        GameObject obj = Instantiate(ExtarPayObject, Bonusparent.transform);
+        obj.transform.position = spawnPos.position;
+        obj.GetComponent<BonusPrefab>().SetNumberWithX(amount);
     }
+    public void ResetBonusUI()
+    {
+        LeaderboadrdShow.Clear();
+        LeaderboadrdShow.TrimExcess();
+        Transform parent = Bonusparent.transform;
 
+        for (int i = parent.childCount - 1; i >= 0; i--)
+        {
+            Destroy(parent.GetChild(i).gameObject);
+        }
+    }
 }
 
 [System.Serializable]
@@ -1897,5 +1890,6 @@ public class ChipData
     public string username;
     public int amount;
 
+    public OptionPrefab betOptionK;
     public GameObject chip;
 }

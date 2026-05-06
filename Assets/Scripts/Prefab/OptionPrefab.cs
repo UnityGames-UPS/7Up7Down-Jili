@@ -13,6 +13,8 @@ public class OptionPrefab : MonoBehaviour
     [SerializeField] private TMP_Text Name;
     [SerializeField] private TMP_Text Text;
     [SerializeField] internal ImageAnimation winAnimation;
+    [SerializeField] internal ImageAnimation winAnimationBorder;
+    [SerializeField] internal ImageAnimation PurpleBorderAnimation;
     [SerializeField] internal GameObject MyBetObj;
     [SerializeField] internal TMP_Text MyBetText;
     [SerializeField] internal TMP_Text PlayerChipText;

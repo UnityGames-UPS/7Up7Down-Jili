@@ -475,6 +475,15 @@ public class UiManager : MonoBehaviour
 
 
         buttonRect = MenuMain_button.GetComponent<RectTransform>();
+
+
+        for (int i = 0; i < WinnerPlayers.Count; i++)
+        {
+            int index = i; // ✅ capture value
+
+            WinnerPlayers[i].Leaderboardbtn.onClick.RemoveAllListeners();
+            WinnerPlayers[i].Leaderboardbtn.onClick.AddListener(() => OnClickLeaderboardIcon(index));
+        }
     }
 
 
@@ -920,7 +929,7 @@ public class UiManager : MonoBehaviour
             );
 
             coin.transform.DOLocalMove(targetPos, duration)
-                .SetDelay(arcIndex * 0.1f);
+                .SetDelay(arcIndex * 0.01f);
             arcIndex++;
         }
 
@@ -1403,6 +1412,15 @@ public class UiManager : MonoBehaviour
         StopAutoBtn.gameObject.SetActive(isAuto);
         Repeatbtn.gameObject.SetActive(!isAuto);
     }
+
+    internal void OnClickLeaderboardIcon(int index)
+    {
+        Debug.Log("LeaderBoardClicked" + index);
+        WinnerPlayers[index].purpleCircle.gameObject.SetActive(true);
+        gameManager.LeaderboadrdShow.Add(index);
+    }
+
+
 }
 // Add this class anywhere in your file
 [System.Serializable]
