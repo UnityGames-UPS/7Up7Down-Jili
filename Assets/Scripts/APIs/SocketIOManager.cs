@@ -214,6 +214,7 @@ public class SocketIOManager : MonoBehaviour
         gameSocket.On<string>("alert", OnSocketAlert);
         gameSocket.On<string>("AnotherDevice", OnSocketOtherDevice);
         gameSocket.On<string>("pong", OnPongReceived);
+        gameSocket.On<string>("balance:sync", OnBalanceSync);
         manager.Open();
     }
 
@@ -254,10 +255,21 @@ public class SocketIOManager : MonoBehaviour
     } //Back2 end
     private void OnError(Error err)
     {
-        Debug.LogError("Socket Error Message: " + err);
+        Debug.LogError("[ERROR] Socket error: " + err);
+        if (err != null && !string.IsNullOrEmpty(err.message) && err.message.Contains("Session expired"))
+        {
+            Debug.LogWarning("Session expired detected");
+            OnDisconnected();
 #if UNITY_WEBGL && !UNITY_EDITOR
-    JSManager.SendCustomMessage("error");
+            if (JSManager != null) JSManager.SendCustomMessage("session_expired");
 #endif
+        }
+        else
+        {
+#if UNITY_WEBGL && !UNITY_EDITOR
+            if (JSManager != null) JSManager.SendCustomMessage("error");
+#endif
+        }
     }
     private void OnListenTimeEvent(string data)
     {
@@ -305,48 +317,78 @@ public class SocketIOManager : MonoBehaviour
     {
         //        Debug.Log("Received alert with data: " + data);
     }
-    private bool isFocused = true;
-    private Coroutine focusCheckCoroutine;
-    private bool disconnectionShown = false;   // <- NEW
 
-    void OnApplicationFocus(bool focus)
+    private bool hasFocus = true;
+    private float focusLostTime = 0f;
+    private Coroutine focusCheckRoutine;
+    private float maxBackgroundTime = 60f;
+    private bool isExiting = false;
+    private bool isBeingDestroyed = false;
+
+    private void OnDestroy()
     {
-        Debug.Log("Focus: " + focus);
-        isFocused = focus;
+        isBeingDestroyed = true;
+    }
+
+    internal void HandleFocusChange(bool focus)
+    {
+        hasFocus = focus;
 
         if (!focus)
         {
-            // Start checking after losing focus
-            if (focusCheckCoroutine == null && !disconnectionShown)
-                focusCheckCoroutine = StartCoroutine(IsNotInFocus());
+            focusLostTime = Time.time;
+            if (focusCheckRoutine == null && !isExiting && !isBeingDestroyed)
+                focusCheckRoutine = StartCoroutine(FocusTimeoutCheck());
         }
         else
         {
-            // If popup already shown, do NOT cancel anything
-            if (disconnectionShown) return;
-
-            // Otherwise cancel coroutine when focus returns
-            if (focusCheckCoroutine != null)
+            if (focusCheckRoutine != null)
             {
-                StopCoroutine(focusCheckCoroutine);
-                focusCheckCoroutine = null;
+                StopCoroutine(focusCheckRoutine);
+                focusCheckRoutine = null;
             }
         }
     }
 
-    IEnumerator IsNotInFocus()
+    private IEnumerator FocusTimeoutCheck()
     {
-        yield return new WaitForSeconds(120f); // 2 seconds, change as required
-
-        // If still not focused AND popup not shown
-        if (!isFocused && !disconnectionShown)
+        while (!hasFocus && !isExiting && !isBeingDestroyed)
         {
-            // disconnectionShown = true;  // Prevent future runs
-            //  uiManager.DisconnectionPopup();
-            Debug.Log("Disconnected: No Focus for 120 seconds");
+            if (Time.time - focusLostTime >= maxBackgroundTime)
+            {
+                Debug.LogWarning("[SOCKET] Background timeout — closing connection");
+                isConnected = false;
+                ResetPingRoutine();
+
+                if (gameSocket != null)
+                {
+                    try { gameSocket.Disconnect(); }
+                    catch (Exception e) { Debug.LogWarning($"[SOCKET] Focus close error: {e.Message}"); }
+                }
+
+                if (uiManager != null) uiManager.DisconnectionPopup();
+                focusCheckRoutine = null;
+                yield break;
+            }
+
+            yield return new WaitForSecondsRealtime(1f);
         }
 
-        focusCheckCoroutine = null;
+        focusCheckRoutine = null;
+    }
+
+    private void OnBalanceSync(string data)
+    {
+        BalanceSyncPayload syncPayload = JsonConvert.DeserializeObject<BalanceSyncPayload>(data);
+        if (syncPayload == null) return;
+
+        if (playerdata == null) playerdata = new Player();
+        playerdata.balance = syncPayload.balance;
+
+        if (gameManager != null)
+        {
+            gameManager.UpdatePlayerbalance(syncPayload.balance.ToString());
+        }
     }
 
     private void OnSocketOtherDevice(string data)
@@ -1156,6 +1198,12 @@ public class Payout
     public string username;
     public string userId;
     public Dictionary<string, int> betWins;
+}
+
+[Serializable]
+public class BalanceSyncPayload
+{
+    public double balance;
 }
 
 [Serializable]

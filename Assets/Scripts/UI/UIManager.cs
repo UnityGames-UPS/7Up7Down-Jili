@@ -13,6 +13,22 @@ public class UiManager : MonoBehaviour
     private AudioManager audioController;
     [SerializeField]
     private SocketIOManager socketManager;
+    [SerializeField]
+    private JSFunctCalls jsFunctCalls;
+
+    private void Awake()
+    {
+        if (jsFunctCalls != null)
+            jsFunctCalls.RegisterVisibilityListener(gameObject.name);
+    }
+
+    public void OnFocusChanged(string value)
+    {
+        bool focused = value == "1";
+        Debug.Log("UNITY FOCUS CHANGED: " + value + " (focused: " + focused + ")");
+        audioController?.SetMuteAll(focused ? !isSound : true);
+        socketManager?.HandleFocusChange(focused);
+    }
 
     [Header("Screens UI")]
     [SerializeField] private GameObject HomeScreen_Object;

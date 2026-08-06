@@ -124,29 +124,72 @@ public class AudioManager : MonoBehaviour
         bg_adudio.Stop();
     }
 
+    private bool isForceMuted = false;
+    private bool preFocusUserMuted = false;
+    private bool userMuted = false;
+
+    // Focus-driven — called from BOTH OnFocusChanged and OnApplicationFocus
+    internal void SetMuteAll(bool forceMute)
+    {
+        if (forceMute == isForceMuted) return;
+        isForceMuted = forceMute;
+
+        if (forceMute)
+        {
+            preFocusUserMuted = userMuted;
+            MuteAllSources(true);
+        }
+        else
+        {
+            MuteAllSources(preFocusUserMuted);
+        }
+    }
+
+    // User-toggle-driven — sound/music button callbacks
+    internal void SetUserMute(bool mute)
+    {
+        userMuted = mute;
+        if (!isForceMuted)
+        {
+            MuteAllSources(userMuted);
+        }
+    }
+
+    private void MuteAllSources(bool mute)
+    {
+        if (bg_adudio) bg_adudio.mute = mute;
+        if (audioPlayer_wl) audioPlayer_wl.mute = mute;
+        if (audioPlayer_button) audioPlayer_button.mute = mute;
+        if (audioBet_button) audioBet_button.mute = mute;
+        if (audioWin) audioWin.mute = mute;
+    }
+
+    private void OnApplicationFocus(bool focus)
+    {
+        SetMuteAll(!focus);
+    }
+
     internal void ToggleMute(bool toggle, string type = "all")
     {
         switch (type)
         {
             case "bg":
-                bg_adudio.mute = toggle;
+                if (bg_adudio) bg_adudio.mute = toggle;
                 break;
             case "button":
-                audioPlayer_button.mute = toggle;
+                if (audioPlayer_button) audioPlayer_button.mute = toggle;
                 break;
             case "wl":
-                audioPlayer_wl.mute = toggle;
+                if (audioPlayer_wl) audioPlayer_wl.mute = toggle;
                 break;
             case "win":
-                audioWin.mute = toggle;
+                if (audioWin) audioWin.mute = toggle;
                 break;
             case "bet":
-                audioBet_button.mute = toggle;
+                if (audioBet_button) audioBet_button.mute = toggle;
                 break;
             case "all":
-                audioPlayer_wl.mute = toggle;
-                bg_adudio.mute = toggle;
-                audioPlayer_button.mute = toggle;
+                SetUserMute(toggle);
                 break;
         }
     }
