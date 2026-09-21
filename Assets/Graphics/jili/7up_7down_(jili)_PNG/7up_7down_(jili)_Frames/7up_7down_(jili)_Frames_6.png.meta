@@ -116,12 +116,12 @@ TextureImporter:
       name: 7up_7down_(jili)_Frames_6_0
       rect:
         serializedVersion: 2
-        x: 5
-        y: 4
-        width: 1083
-        height: 215
+        x: 0
+        y: 0
+        width: 1092
+        height: 223
       alignment: 0
-      pivot: {x: 0, y: 0}
+      pivot: {x: 0.5, y: 0.5}
       border: {x: 0, y: 0, z: 0, w: 0}
       customData: 
       outline: []
@@ -138,7 +138,7 @@ TextureImporter:
     customData: 
     physicsShape: []
     bones: []
-    spriteID: 
+    spriteID: c8c3f722d9c9245b49e7b7198269ca0b
     internalID: 0
     vertices: []
     indices: 

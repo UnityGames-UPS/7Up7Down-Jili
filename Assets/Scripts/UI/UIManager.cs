@@ -16,10 +16,18 @@ public class UiManager : MonoBehaviour
     [SerializeField]
     private JSFunctCalls jsFunctCalls;
 
+    [Header("Cursor")]
+    [SerializeField] private Texture2D cursorTexture;
+    [SerializeField] private Vector2 cursorHotspot = Vector2.zero;
+
     private void Awake()
     {
         if (jsFunctCalls != null)
             jsFunctCalls.RegisterVisibilityListener(gameObject.name);
+
+        // ForceSoftware keeps the cursor at the texture's pixel size, ignoring the OS pointer-size setting
+        if (cursorTexture != null)
+            Cursor.SetCursor(cursorTexture, cursorHotspot, CursorMode.ForceSoftware);
     }
 
     public void OnFocusChanged(string value)
