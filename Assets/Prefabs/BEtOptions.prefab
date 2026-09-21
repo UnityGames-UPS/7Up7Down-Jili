@@ -90,7 +90,7 @@ GameObject:
   - component: {fileID: 6665480846410986418}
   - component: {fileID: 2095927017995646293}
   m_Layer: 5
-  m_Name: BEtOptions
+  m_Name: BetOptions
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

@@ -6,9 +6,6 @@ using TMPro;
 using DG.Tweening;
 using System.Linq;
 
-
-
-
 public class GameManager : MonoBehaviour
 {
     [Header("Pages")]

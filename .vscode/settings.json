@@ -67,5 +67,5 @@
         "*.sln": "*.csproj",
         "*.slnx": "*.csproj"
     },
-    "dotnet.defaultSolution": "7up7downjili.slnx"
+    "dotnet.defaultSolution": "7Up7Down-Jili.slnx"
 }
