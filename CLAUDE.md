@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this project is
 
-Unity **6000.3.14f1** WebGL client for **7 Up 7 Down**, a JILI-style multiplayer dice betting game
+Unity **6000.3.24f1** WebGL client for **7 Up 7 Down**, a JILI-style multiplayer dice betting game
 (`productName: "7 up 7 down jilli"`). The client is a thin presentation layer: **all game logic,
 RNG, balance and payouts live on the backend**, reached over Socket.IO. The client only renders
 state and emits intents.
@@ -40,7 +40,7 @@ The user handles everything Unity-Editor-side. **Scripts under `Assets/Scripts/`
 
 There is no CLI build script, no test suite, and no lint config in this repo.
 
-- **Run**: open the project in Unity 6000.3.14f1, load `Assets/Scenes/SampleScene.unity`, press Play.
+- **Run**: open the project in Unity 6000.3.24f1, load `Assets/Scenes/GameScene.unity`, press Play.
   In Editor, `SocketIOManager` connects to `TestSocketURI` using the Inspector-assigned `testToken`
   (see `#if UNITY_EDITOR` in `SetupSocketManager`). In WebGL builds it instead asks the host page
   for a token via the jslib bridge.
@@ -161,12 +161,14 @@ Do not "fix" these silently as drive-by changes; flag them first.
 - `OptionPrefab` keeps its own running bet totals (`currentPlayerBetValue`) in parallel with the
   server's — they can drift on undo/cancel paths.
 
-## Current status (as of the `ashutosh` branch)
+## Current status (branch `dev-meh`, at `55f12a9` "feat: small optimizations")
 
 Core loop is working end-to-end against `devrealtime.dingdinghouse.com`: init, level join, betting
 with chip animation, timer, dice result, payouts, bonus multipliers, history, leaderboards, stats
 road map, single/multiplayer modes, auto-repeat.
 
-Uncommitted working tree is mostly Editor-side churn (scene, fonts, `.slnx` cleanup, removal of
-the old `JSHandler.cs` / duplicate `JSFunctCalls.cs`, audit doc moved to `Assets/Scripts/MD/`);
-script changes are cosmetic only.
+That commit was housekeeping, not gameplay: Unity upgraded 6000.3.14f1 → 6000.3.24f1 (with the
+usual package bumps), scene renamed `SampleScene.unity` → `GameScene.unity`, stale `.slnx` files
+and `CookieManager.jslib` deleted, `JSHandler.cs` and the duplicate root-level `JSFunctCalls.cs`
+removed, audit doc moved to `Assets/Scripts/MD/`. `SocketIOManager.cs` shows a large diff but it
+is almost entirely line-ending normalization — `git show -w` reduces it to a few lines.
