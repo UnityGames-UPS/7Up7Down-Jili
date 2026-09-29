@@ -34,8 +34,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1, y: 64.7}
-  m_SizeDelta: {x: 25, y: 25}
+  m_AnchoredPosition: {x: -1.4608, y: 58.465233}
+  m_SizeDelta: {x: 23.3746, y: 23.8819}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &8866346420233348271
 CanvasRenderer:
@@ -59,7 +59,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
-  m_RaycastTarget: 1
+  m_RaycastTarget: 0
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
   m_OnCullStateChanged:
@@ -67,7 +67,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: 9161826379723400020, guid: ade65470a185d42fc9ca4fa6c9e460ef, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -109,7 +109,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -67}
+  m_AnchoredPosition: {x: -0.6184, y: -53.6}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2174511843990694058
@@ -142,7 +142,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: -1115860684904411382, guid: bc15411e4e1e94f4a9e69c1b3fca2929, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -162,7 +162,7 @@ GameObject:
   - component: {fileID: 5760580105464110478}
   - component: {fileID: 1791822800607888831}
   m_Layer: 5
-  m_Name: Image
+  m_Name: RedGreenBlueImg
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -185,8 +185,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 22}
-  m_SizeDelta: {x: 40, y: 40}
+  m_AnchoredPosition: {x: -0.6184, y: 27.824589}
+  m_SizeDelta: {x: 40, y: 34.4492}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5760580105464110478
 CanvasRenderer:
@@ -238,12 +238,12 @@ GameObject:
   - component: {fileID: 2730478783068602633}
   - component: {fileID: 3142349817316632283}
   m_Layer: 5
-  m_Name: outline
+  m_Name: OutlineImg
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &199388206536995729
 RectTransform:
   m_ObjectHideFlags: 0
@@ -260,8 +260,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -3.9222, y: -23.053}
-  m_SizeDelta: {x: 73.0338, y: 158.8716}
+  m_AnchoredPosition: {x: -3.9222, y: -16.7622}
+  m_SizeDelta: {x: 61.5185, y: 148.9025}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &2730478783068602633
 CanvasRenderer:
@@ -335,7 +335,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -23}
+  m_AnchoredPosition: {x: -0.6184, y: -10.9}
   m_SizeDelta: {x: 40, y: 40}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1499780213682486018
@@ -368,7 +368,7 @@ MonoBehaviour:
       m_Calls: []
   m_Sprite: {fileID: -3270817625467931815, guid: bc15411e4e1e94f4a9e69c1b3fca2929, type: 3}
   m_Type: 0
-  m_PreserveAspect: 0
+  m_PreserveAspect: 1
   m_FillCenter: 1
   m_FillMethod: 4
   m_FillAmount: 1
@@ -469,8 +469,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: -2.5}
-  m_SizeDelta: {x: 56.4002, y: 45}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 43.0259, y: 45}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &5893674046500868321
 CanvasRenderer:
@@ -529,15 +529,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 24.83
+  m_fontSize: 25
   m_fontSizeBase: 24.83
   m_fontWeight: 400
-  m_enableAutoSizing: 0
+  m_enableAutoSizing: 1
   m_fontSizeMin: 18
-  m_fontSizeMax: 72
+  m_fontSizeMax: 25
   m_fontStyle: 1
   m_HorizontalAlignment: 2
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_characterHorizontalScale: 1
