@@ -36,6 +36,17 @@ The user handles everything Unity-Editor-side. **Scripts under `Assets/Scripts/`
   serialized field silently breaks the scene — the user has to re-wire it. Adding new serialized
   fields is fine, but say so explicitly so they get assigned in the Inspector.
 
+## Code style
+
+Claude writes most of the game code here, so keep it easy for both of us to read back.
+
+- **Comments: small and meaningful.** One short line saying *why* or what is non-obvious. No big
+  block comments, no banners, no restating what the code already says, no change-log comments
+  ("added for X", "fixed Y").
+- Prefer a clear name over a comment. If a method needs a paragraph to explain, split it.
+- Delete dead code instead of commenting it out — git has the history.
+- Match the surrounding naming/idiom unless the task is to refactor that file.
+
 ## Build / run
 
 There is no CLI build script, no test suite, and no lint config in this repo.
@@ -83,7 +94,28 @@ Types: `JOIN_LEVEL`, `PLAYER_MODE`, `PLACE_BET`, `UNDO_BET`, `REPEAT_BET`, `CANC
 **Liveness**: `PingCheck` emits `ping` every `pingInterval`; a missing `pong` increments
 `missedPongs` → reconnection popup at 2, disconnect popup and give-up at `MaxMissedPongs` (5).
 
-### Round lifecycle
+### Backend contract (`Assets/Scripts/MD/Backend.md`)
+
+`Backend.md` is the backend team's spec for this game (variant `ML-7U7DJ`) and the authority for
+game-specific events, actions and bet keys. It only lists what is specific to 7 Up 7 Down —
+studio-common events (`game:init`, `balance:sync`, `game:lobby_count`, `pong`, `socketState`,
+`internalError`, `alert`, `AnotherDevice`) are not in it but still apply and must keep working.
+
+Server-defined phase order: `game:round_start` (+ `game:bonus`) → `game:betting_timer` ticks →
+`game:round_end` (**betting closed**, "No More Bets") → `game:dice_result` (dice + wins).
+
+Where the client currently differs from the spec (verify before relying on either side):
+
+- `game:bet_cancel` (another player cancelled) — **no listener**; their chips stay on the table.
+- `game:cashout_timer` — no listener. Spec marks cashout events "if applicable".
+- `game:round_end` means *betting closed* in the spec; the client treats it as end-of-round
+  cleanup (`EndLoop`) and closes betting off the timer hitting 0 instead.
+- `game:dice_result` carries winning options and the player's `winAmount`; the client ignores
+  `winAmount` and derives wins from `game:cashout` (`Payout.betWins`) plus the balance label.
+- Spec expects the dice to be thrown and land on `dice1`/`dice2`, bonus zones to glow with "NX"
+  text, and a celebration when `winAmount > 0`.
+
+### Round lifecycle (as the client implements it today)
 
 1. `game:init` → `ManageInitData` fills `initialData` (`GameData`) and `playerdata`, then
    `SetInitialData()` + `SetOptionData()` and posts `OnEnter` to the host page.
@@ -129,8 +161,10 @@ The project was forked from an **Andar Bahar** client and retargeted to dice. So
 bridge, WebGL template, focus/visibility handling, chip pooling and menu/history UI came over
 unchanged on purpose. Residue to expect: card-based DTOs, `matchSide`/`andarCards` fields,
 `AndarHighLight`/`BaharHighLight` objects, `CardDelt` naming for the dice-result payload,
-`gameID = "ml-ab"`, and large commented-out blocks. Leave the socket/DTO shape alone unless the
-backend actually changed; prune only what you are sure is unused.
+`gameID = "ml-ab"`, and large commented-out blocks.
+
+**This residue is now slated for removal** (see "Refactor plan"). What stays untouched is the
+studio-common plumbing: connection/auth, ping/pong, focus handling, JS bridge.
 
 ### Host-platform contract (React / React-Native WebView)
 
@@ -161,14 +195,34 @@ Do not "fix" these silently as drive-by changes; flag them first.
 - `OptionPrefab` keeps its own running bet totals (`currentPlayerBetValue`) in parallel with the
   server's — they can drift on undo/cancel paths.
 
-## Current status (branch `dev-meh`, at `55f12a9` "feat: small optimizations")
+## Refactor plan (agreed direction, not started)
 
-Core loop is working end-to-end against `devrealtime.dingdinghouse.com`: init, level join, betting
-with chip animation, timer, dice result, payouts, bonus multipliers, history, leaderboards, stats
-road map, single/multiplayer modes, auto-repeat.
+The scripts were written by a previous developer against the old UI. The goal is a full refactor
+of `Assets/Scripts/`, done in steps the user asks for — not as drive-by changes.
 
-That commit was housekeeping, not gameplay: Unity upgraded 6000.3.14f1 → 6000.3.24f1 (with the
-usual package bumps), scene renamed `SampleScene.unity` → `GameScene.unity`, stale `.slnx` files
-and `CookieManager.jslib` deleted, `JSHandler.cs` and the duplicate root-level `JSFunctCalls.cs`
-removed, audit doc moved to `Assets/Scripts/MD/`. `SocketIOManager.cs` shows a large diff but it
-is almost entirely line-ending normalization — `git show -w` reduces it to a few lines.
+1. **Match the new UI.** The user has replaced/reworked much of the UI in the scene; scripts still
+   reference the old layout. Ask which objects exist now rather than assuming from old field names.
+2. **Remove all Andar Bahar / card logic**: dead DTOs (`AndarCard`, `MiddleCard`, `First3`,
+   `Andar`/`Bahar`, `matchSide`, …), card-named handlers and fields (`CardDelt`,
+   `OnListenCardEvent`, `AndarHighLight`/`BaharHighLight`), `gameID = "ml-ab"`, commented-out blocks.
+3. **Fix the animation mistakes** left in chip, dice, bonus and payout animations.
+4. **Align with `Backend.md`** — close the gaps listed under "Backend contract".
+
+Rules while refactoring:
+
+- Removing or renaming a `[SerializeField]` un-wires it in the scene. List every such field in the
+  reply so the user can re-wire or delete it in the Inspector.
+- Dropping unused DTO fields is safe for parsing (both serializers ignore unknown JSON keys), but
+  keep every field a handler still reads.
+- The "Known rough edges" above are in scope for the refactor, but still call each one out when
+  touching it.
+
+## Current status (branch `dev-meh`)
+
+Core loop works end-to-end against `devrealtime.dingdinghouse.com`: init, level join, betting with
+chip animation, timer, dice result, payouts, bonus multipliers, history, leaderboards, stats road
+map, single/multiplayer modes, auto-repeat.
+
+Since `55f12a9` the work has been Editor-side UI replacement (new graphics, old `NewGraphics/` and
+Core Sans BR fonts removed, scene reworked). Script code has not yet been brought in line with it —
+that is the refactor above.

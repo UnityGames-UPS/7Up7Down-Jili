@@ -202,10 +202,6 @@ public class SocketIOManager : MonoBehaviour
     gameSocket.On<string>("game:betting_timer", OnListenTimeEvent);
     gameSocket.On<string>("game:dice_result", OnListenCardEvent);
     gameSocket.On<string>("game:bonus", OnGameBonus);
-    gameSocket.On<bool>("socketState", OnSocketState);
-    gameSocket.On<string>("internalError", OnSocketError);
-    gameSocket.On<string>("alert", OnSocketAlert);
-    gameSocket.On<string>("AnotherDevice", OnSocketOtherDevice);
     gameSocket.On<string>("pong", OnPongReceived);
     gameSocket.On<string>("balance:sync", OnBalanceSync);
     manager.Open();
