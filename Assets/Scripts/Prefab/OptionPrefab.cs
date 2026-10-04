@@ -53,7 +53,6 @@ public class OptionPrefab : MonoBehaviour
 
     internal void OnClickBtn()
     {
-        Debug.Log("&&" + Optionindex + " " + gameObject.name);
         gameManager.onClickOption(gameObject);
     }
 
@@ -75,7 +74,6 @@ public class OptionPrefab : MonoBehaviour
 
     internal void AddPlayerChip(int Amount, Sprite chipImg)
     {
-        Debug.Log("adddChip" + Amount);
         // Update total bet value
         currentPlayerBetValue += Amount;
 

@@ -71,7 +71,7 @@ SocketIOManager  (Assets/Scripts/APIs/SocketIOManager.cs)   — transport + all 
    ├── GameManager (Assets/Scripts/Functionality/GameManager.cs) — round flow, bets, chips, payouts
    │      └── OptionPrefab (Assets/Scripts/Prefab/OptionPrefab.cs) — one per bet spot
    ├── UiManager   (Assets/Scripts/UI/UIManager.cs)          — popups, menus, stats road map, history
-   ├── Homepage    (Assets/Scripts/Functionality/Homepage.cs)— splash/loading before game data lands
+   ├── StartupPage (Assets/Scripts/Functionality/StartupPage.cs)— one-way splash/loading shown over the running game
    ├── AudioManager, DiceResultmanager, ImageAnimation, OrientationChange
    └── JSFunctCalls (Assets/Scripts/JS/JSFunctCalls.cs)      — C# ↔ browser bridge
 ```
@@ -118,9 +118,11 @@ Where the client currently differs from the spec (verify before relying on eithe
 ### Round lifecycle (as the client implements it today)
 
 1. `game:init` → `ManageInitData` fills `initialData` (`GameData`) and `playerdata`, then
-   `SetInitialData()` + `SetOptionData()` and posts `OnEnter` to the host page.
+   `SetInitialData()` + `SetOptionData()`, emits `JOIN_LEVEL` for `levels[0]` (the client joins
+   the first level itself; there is no lobby) and posts `OnEnter` to the host page.
 2. `JOIN_LEVEL` ack → `OnRoomEnter` → `SetCoinData()` (chip denominations for that level),
-   rule panel, leaderboards.
+   rule panel, leaderboards, and lets `StartupPage` finish loading. Rounds run muted behind the
+   startup page until it is dismissed (Continue, or automatically if "don't show again" is saved).
 3. `game:round_start` → `GameManager.OnGameLoopStart()` clears chips, resets option UI,
    fires "please bet now", auto-repeats if `isAuto`.
 4. `game:betting_timer` → `SetBetTimer()` drives the circular timer; at 0 it enables `BetBlocker`
@@ -151,20 +153,17 @@ Both serializers are in play and are not interchangeable:
   `game:cashout` (`Payout.betWins` is `Dictionary<string,int>`), `balance:sync`.
 
 `Root` is a single god-DTO reused for *every* event, so most of its fields are null for any given
-message; check the event handler to know which subset is populated. Several DTO classes
-(`AndarCard`, `MiddleCard`, `First3`, `Andar`/`Bahar`, `matchSide`, …) are dead leftovers from the
-base template.
+message; check the event handler to know which subset is populated.
 
 ### Base template lineage
 
 The project was forked from an **Andar Bahar** client and retargeted to dice. Socket layer, JS
 bridge, WebGL template, focus/visibility handling, chip pooling and menu/history UI came over
-unchanged on purpose. Residue to expect: card-based DTOs, `matchSide`/`andarCards` fields,
-`AndarHighLight`/`BaharHighLight` objects, `CardDelt` naming for the dice-result payload,
-`gameID = "ml-ab"`, and large commented-out blocks.
+unchanged on purpose. Most card residue has been removed (see "Refactor plan"); what is left is
+large commented-out blocks.
 
-**This residue is now slated for removal** (see "Refactor plan"). What stays untouched is the
-studio-common plumbing: connection/auth, ping/pong, focus handling, JS bridge.
+What stays untouched is the studio-common plumbing: connection/auth, ping/pong, focus handling,
+JS bridge.
 
 ### Host-platform contract (React / React-Native WebView)
 
@@ -202,9 +201,13 @@ of `Assets/Scripts/`, done in steps the user asks for — not as drive-by change
 
 1. **Match the new UI.** The user has replaced/reworked much of the UI in the scene; scripts still
    reference the old layout. Ask which objects exist now rather than assuming from old field names.
-2. **Remove all Andar Bahar / card logic**: dead DTOs (`AndarCard`, `MiddleCard`, `First3`,
-   `Andar`/`Bahar`, `matchSide`, …), card-named handlers and fields (`CardDelt`,
-   `OnListenCardEvent`, `AndarHighLight`/`BaharHighLight`), `gameID = "ml-ab"`, commented-out blocks.
+2. **Remove all Andar Bahar / card logic** — mostly done: dead card DTOs, `Root` card fields,
+   flush/highlight fields, `AnimationCall.cs` and `gameID` are gone; the dice payload is now
+   `SocketIOManager.DiceResult`, handled by `OnDiceResult`. Still to do:
+   - **Bet history** is stubbed: both history buttons open the popup and send `BET_HISTORY`;
+     `OnHistory` only logs the reply (`[BET_HISTORY] reply: …`). The card-based `History` DTO,
+     `SetHistoryPage` and `HistoryPrefab.SetData` were removed. Rebuild the DTO, row binding and
+     page tracking (`CurrentHistoryPage`/`MaxHistoryPage`) from the logged reply and the new UI.
 3. **Fix the animation mistakes** left in chip, dice, bonus and payout animations.
 4. **Align with `Backend.md`** — close the gaps listed under "Backend contract".
 

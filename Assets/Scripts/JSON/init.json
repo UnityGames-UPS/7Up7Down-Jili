@@ -1,0 +1,302 @@
+{
+  "id": "6989b7271253a8672485d64c",
+  "gameData": {
+    "betOptions": [
+      "number_8_12",
+      "number_7",
+      "number_2_6",
+      "s_2",
+      "s_3",
+      "s_4",
+      "s_5",
+      "s_6",
+      "s_8",
+      "s_9",
+      "s_10",
+      "s_11",
+      "s_12"
+    ],
+    "roundInterval": 10500,
+    "diceInterval": 2000,
+    "diceLimit": 11,
+    "statsLimit": 60,
+    "bets": {
+      "level_1": [
+        10,
+        20,
+        30,
+        50,
+        100,
+        200
+      ],
+      "level_2": [
+        20,
+        30,
+        50,
+        100,
+        200,
+        400
+      ],
+      "level_3": [
+        30,
+        50,
+        100,
+        200,
+        400,
+        600
+      ],
+      "level_4": [
+        50,
+        100,
+        200,
+        400,
+        600,
+        1000
+      ],
+      "level_5": [
+        100,
+        200,
+        400,
+        600,
+        1000,
+        2000
+      ],
+      "level_6": [
+        200,
+        400,
+        600,
+        1000,
+        2000,
+        4000
+      ]
+    },
+    "levels": [
+      "level_1",
+      "level_2",
+      "level_3",
+      "level_4",
+      "level_5",
+      "level_6"
+    ],
+    "wagers": {
+      "main_bets": {
+        "number_7": {
+          "payout": [
+            1,
+            4
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "number_2_6": {
+          "payout": [
+            1,
+            1
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "number_8_12": {
+          "payout": [
+            1,
+            1
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        }
+      },
+      "side_bets": {
+        "s_2": {
+          "payout": [
+            1,
+            26
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_3": {
+          "payout": [
+            1,
+            12
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_4": {
+          "payout": [
+            1,
+            8
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_5": {
+          "payout": [
+            1,
+            6
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_6": {
+          "payout": [
+            1,
+            5
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_8": {
+          "payout": [
+            1,
+            5
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_9": {
+          "payout": [
+            1,
+            6
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_10": {
+          "payout": [
+            1,
+            8
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_11": {
+          "payout": [
+            1,
+            12
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        },
+        "s_12": {
+          "payout": [
+            1,
+            26
+          ],
+          "max_bet_limit": {
+            "level_1": 200,
+            "level_2": 400,
+            "level_3": 600,
+            "level_4": 1000,
+            "level_5": 2000,
+            "level_6": 4000
+          }
+        }
+      }
+    },
+    "lobby": {
+      "level_1": 0,
+      "level_2": 0,
+      "level_3": 0,
+      "level_4": 0,
+      "level_5": 0,
+      "level_6": 0
+    },
+    "totalCount": 0,
+    "playerCount": 0,
+    "leaderboards": {
+      "winners": []
+    },
+    "stats": [],
+    "bonusMultipliers": {
+      "count": [
+        2,
+        3,
+        4,
+        5
+      ],
+      "value": [
+        2,
+        4,
+        8,
+        12
+      ]
+    }
+  },
+  "player": {
+    "balance": 6569.14,
+    "username": "maahul"
+  }
+}

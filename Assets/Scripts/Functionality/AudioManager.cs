@@ -97,12 +97,6 @@ public class AudioManager : MonoBehaviour
             case "newround":
                 index = 4;
                 break;
-            case "cards":
-                index = 5;
-                break;
-            case "midCard":
-                index = 6;
-                break;
 
         }
         StopWLAaudio();
@@ -162,6 +156,12 @@ public class AudioManager : MonoBehaviour
         if (audioPlayer_button) audioPlayer_button.mute = mute;
         if (audioBet_button) audioBet_button.mute = mute;
         if (audioWin) audioWin.mute = mute;
+    }
+
+    // Separate from the mute flags so focus restore and the user's sound setting are untouched
+    internal void SetStartupSilence(bool silent)
+    {
+        AudioListener.volume = silent ? 0f : 1f;
     }
 
     private void OnApplicationFocus(bool focus)
