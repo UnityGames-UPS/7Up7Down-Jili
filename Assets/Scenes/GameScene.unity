@@ -2025,6 +2025,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -2620,7 +2624,7 @@ MonoBehaviour:
   - {fileID: -8507061012738902324, guid: dc54a0627cca649f2a7efe076e4ddbec, type: 3}
   - {fileID: -8507061012738902324, guid: dc54a0627cca649f2a7efe076e4ddbec, type: 3}
   - {fileID: -8507061012738902324, guid: dc54a0627cca649f2a7efe076e4ddbec, type: 3}
-  chipPrefab: {fileID: 6936810325967969954, guid: fe27c184ac9434347856d42772cd9254, type: 3}
+  chipPrefab: {fileID: 1210813639785335540, guid: c7e9c90b758fb4f75be144d0290cebc2, type: 3}
   initialCount: 20
   poolParent: {fileID: 1657115145}
   BetBlocker: {fileID: 1183041501}
@@ -4836,7 +4840,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 0.1
   m_fontSizeMax: 77
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -12263,6 +12267,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13092,6 +13100,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -13508,12 +13520,12 @@ GameObject:
   - component: {fileID: 516551806}
   - component: {fileID: 516551805}
   m_Layer: 5
-  m_Name: BlackTransParent
+  m_Name: BlackOverlayImg
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &516551804
 RectTransform:
   m_ObjectHideFlags: 0
@@ -13528,10 +13540,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 1619834874}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 260, y: 274}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: 0.20991516, y: -0.02520752}
+  m_SizeDelta: {x: -18.09982, y: -28.930416}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &516551805
 MonoBehaviour:
@@ -16091,7 +16103,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 0.1
   m_fontSizeMax: 77
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -21203,6 +21215,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -29589,7 +29605,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 0.1
   m_fontSizeMax: 77
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -30636,6 +30652,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -32921,15 +32941,15 @@ MonoBehaviour:
     connection: 0
     init: 0
     requests: 1
-    round: 1
-    timer: 0
-    bets: 0
+    round: 0
+    timer: 1
+    bets: 1
     otherBets: 0
     cashout: 1
     leaderboard: 0
-    lobby: 0
+    lobby: 1
   JSManager: {fileID: 1519490010}
-  testToken: a2818f49695940c49a1803a100b85fe8
+  testToken: 51391e095dff44f19503f97f1503c824
   RaycastBlocker: {fileID: 1127067818}
 --- !u!4 &1272847617
 Transform:
@@ -35665,6 +35685,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -36717,12 +36741,12 @@ GameObject:
   - component: {fileID: 1437519877}
   - component: {fileID: 1437519876}
   m_Layer: 5
-  m_Name: BlackTransparent
+  m_Name: BlackOverlayImg
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1437519875
 RectTransform:
   m_ObjectHideFlags: 0
@@ -36737,10 +36761,10 @@ RectTransform:
   m_Children: []
   m_Father: {fileID: 560839337}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 382, y: 274}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -1.4550018, y: -0.7299957}
+  m_SizeDelta: {x: -21.71, y: -19.280018}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1437519876
 MonoBehaviour:
@@ -40363,6 +40387,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -44402,12 +44430,12 @@ GameObject:
   - component: {fileID: 1740648690}
   - component: {fileID: 1740648689}
   m_Layer: 5
-  m_Name: BlackTransparent
+  m_Name: BlackOverlayImg
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1740648688
 RectTransform:
   m_ObjectHideFlags: 0
@@ -44415,17 +44443,17 @@ RectTransform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1740648687}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 20}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1381683065}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0.5, y: 0.5}
-  m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 372, y: 274}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 1, y: 1}
+  m_AnchoredPosition: {x: -1.4550018, y: -0.7299957}
+  m_SizeDelta: {x: -21.71, y: -19.280018}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1740648689
 MonoBehaviour:
@@ -50357,6 +50385,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -50468,7 +50500,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 0.1
   m_fontSizeMax: 77
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -52029,6 +52061,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -56889,7 +56925,7 @@ MonoBehaviour:
   m_enableAutoSizing: 1
   m_fontSizeMin: 0.1
   m_fontSizeMax: 77
-  m_fontStyle: 1
+  m_fontStyle: 0
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
@@ -57597,6 +57633,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3773377049797127066, guid: 16f3fec5a8866403ca35a8ab77ee20ef, type: 3}
+      propertyPath: gameManager
+      value: 
+      objectReference: {fileID: 85071005}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
