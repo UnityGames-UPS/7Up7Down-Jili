@@ -69,7 +69,8 @@ Everything hangs off a handful of scene singletons wired to each other via `[Ser
 ```
 SocketIOManager  (Assets/Scripts/APIs/SocketIOManager.cs)   — transport + all DTOs
    ├── GameManager (Assets/Scripts/Functionality/GameManager.cs) — round flow, bets, chips, payouts
-   │      └── OptionPrefab (Assets/Scripts/Prefab/OptionPrefab.cs) — one per bet spot
+   │      ├── BetOptionView (Assets/Scripts/Prefab/BetOptionView.cs) — one per bet spot; no manager refs, raises `Clicked`
+   │      └── ChipManager (Assets/Scripts/Functionality/ChipManager.cs) — chip pool (`GenericObjectPool<Chip>`), sprites, all chip animation tuning
    ├── UiManager   (Assets/Scripts/UI/UIManager.cs)          — popups, menus, stats road map, history
    ├── StartupPage (Assets/Scripts/Functionality/StartupPage.cs)— one-way splash/loading shown over the running game
    ├── AudioManager, DiceResultmanager, ImageAnimation, OrientationChange
@@ -82,8 +83,8 @@ Namespace `playground-multiplayer` on the SocketManager; transport forced to Web
 `Reconnection = false` (reconnect is handled manually).
 
 **Inbound** (`gameSocket.On<string>(...)` in `SetupSocketManager`):
-`game:init`, `game:round_start`, `game:betting_timer`, `game:dice_result`, `game:round_end`,
-`game:cashout`, `game:bet_placed` (other players), `game:bonus`, `game:lobby_count`,
+`game:init`, `game:round_start`, `game:betting_timer`, `game:dice_result`,
+`game:cashout`, `game:bet_placed` (every bet in the room, the player's own included), `game:bonus`, `game:lobby_count`,
 `balance:sync`, `pong`, `socketState`, `internalError`, `alert`, `AnotherDevice`.
 
 **Outbound**: almost everything is a single `"request"` emit carrying `{type, payload}` JSON, with
@@ -108,10 +109,10 @@ Where the client currently differs from the spec (verify before relying on eithe
 
 - `game:bet_cancel` (another player cancelled) — **no listener**; their chips stay on the table.
 - `game:cashout_timer` — no listener. Spec marks cashout events "if applicable".
-- `game:round_end` means *betting closed* in the spec; the client treats it as end-of-round
-  cleanup (`EndLoop`) and closes betting off the timer hitting 0 instead.
-- `game:dice_result` carries winning options and the player's `winAmount`; the client ignores
-  `winAmount` and derives wins from `game:cashout` (`Payout.betWins`) plus the balance label.
+- `game:round_end` is in the spec but the server never sends it, so there is no listener; the
+  client closes betting off the timer hitting 0 instead.
+- `game:dice_result` is specced to carry winning options and the player's `winAmount`; the real
+  payload is only `roundId`, `dice1`, `dice2`, `sum`, `matchSide`, so the client derives wins from `game:cashout` (`Payout.betWins`) plus the balance label.
 - Spec expects the dice to be thrown and land on `dice1`/`dice2`, bonus zones to glow with "NX"
   text, and a celebration when `winAmount > 0`.
 
@@ -129,20 +130,19 @@ Where the client currently differs from the spec (verify before relying on eithe
    and dims every option the player has no bet on.
 5. `game:dice_result` → `ManageResult()` runs the dice animation, then `ManageAfterResult()`
    highlights the winning option(s) and pushes the result into the stats road map.
-6. `game:round_end` → `EndLoop()` → `GameLoop()` cleanup coroutine.
-7. `game:cashout` → `ManagePayouts()` → chips animate from options to winners, balances update,
+6. `game:cashout` → `ManagePayouts()` → chips animate from options to winners, balances update,
    leaderboards refresh, net-bet panel resets.
 
 ### Bet option indexing (easy to get wrong)
 
-`GameManager.AllOptions` is ordered: `[0] 8-12`, `[1] 7`, `[2] 2-6`, then `[3..12]` = totals
+`GameManager.betOptions` is ordered: `[0] 8-12`, `[1] 7`, `[2] 2-6`, then `[3..12]` = totals
 2,3,4,5,6,8,9,10,11,12. This must line up with the server's `GameData.betOptions` array, because
-`onClickOption` sends `socketManager.initialData.betOptions[optionprefab.Optionindex]`.
+`SetOptionData` gives each view `initialData.betOptions[i]` as its `BetKey` (sent on `PLACE_BET`).
 Consequences used throughout:
 
-- result resolution: total < 7 → `AllOptions[total + 1]`; total > 7 → `AllOptions[total]`; total 7 → `AllOptions[1]`.
-- `FindOption(string)` maps server keys (`s_2`, `number_7`, …) back to list indices, and
-  **falls back to `AllOptions[0]` for anything unrecognized** — a typo'd key silently credits "8-12".
+- result resolution: total < 7 → `betOptions[total + 1]`; total > 7 → `betOptions[total]`; total 7 → `betOptions[1]`.
+- `TryGetOption(string)` maps server keys (`s_2`, `number_7`, …) back to views; unknown keys are
+  logged and skipped.
 
 ### JSON serialization
 
@@ -152,8 +152,10 @@ Both serializers are in play and are not interchangeable:
 - `JsonConvert` (Newtonsoft) where a payload contains dictionaries — `game:init`, `game:bonus`,
   `game:cashout` (`Payout.betWins` is `Dictionary<string,int>`), `balance:sync`.
 
-`Root` is a single god-DTO reused for *every* event, so most of its fields are null for any given
-message; check the event handler to know which subset is populated.
+Each inbound event has its own DTO (`RoundStartEvent`, `BettingTimerEvent`, `DiceResultEvent`, …)
+and each ack is a `Reply<TPayload>` (`PlaceBetPayload`, `UndoBetPayload`, …), built from the
+captured samples in `Assets/Scripts/JSON/`. `CashoutEvent`, `HomePayload` and the `PLAYER_MODE`
+reply (read as `JoinLevelPayload`) have no captured sample yet and only mirror what the handlers read.
 
 ### Base template lineage
 
@@ -191,8 +193,8 @@ Do not "fix" these silently as drive-by changes; flag them first.
   Any formatting change to the balance text breaks win calculation.
 - Several UI bindings in `UiManager.Start()` are mis-wired copy-paste (`Music_button` and
   `MusicMute_button` both call `ToggleSound()`).
-- `OptionPrefab` keeps its own running bet totals (`currentPlayerBetValue`) in parallel with the
-  server's — they can drift on undo/cancel paths.
+- `BetOptionView` keeps its own running bet totals (`PlayerBet` / `OpponentBet`) in parallel with
+  the server's — they are client-side sums of acks and broadcasts, not server truth.
 
 ## Refactor plan (agreed direction, not started)
 
@@ -203,7 +205,7 @@ of `Assets/Scripts/`, done in steps the user asks for — not as drive-by change
    reference the old layout. Ask which objects exist now rather than assuming from old field names.
 2. **Remove all Andar Bahar / card logic** — mostly done: dead card DTOs, `Root` card fields,
    flush/highlight fields, `AnimationCall.cs` and `gameID` are gone; the dice payload is now
-   `SocketIOManager.DiceResult`, handled by `OnDiceResult`. Still to do:
+   `DiceResultEvent`, handled by `OnDiceResult`. Still to do:
    - **Bet history** is stubbed: both history buttons open the popup and send `BET_HISTORY`;
      `OnHistory` only logs the reply (`[BET_HISTORY] reply: …`). The card-based `History` DTO,
      `SetHistoryPage` and `HistoryPrefab.SetData` were removed. Rebuild the DTO, row binding and

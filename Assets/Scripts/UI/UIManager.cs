@@ -28,6 +28,7 @@ public class UiManager : MonoBehaviour
       jsFunctCalls.RegisterVisibilityListener(gameObject.name);
 
     ApplyCursor();
+    SetupChipSelectorBackdrop();
   }
 
   private void ApplyCursor()
@@ -232,7 +233,6 @@ public class UiManager : MonoBehaviour
   bool isSound;
 
   private bool isExpanded = false;
-  public float duration = 0.01f;
 
 
 
@@ -259,6 +259,22 @@ public class UiManager : MonoBehaviour
   [SerializeField] internal Chip coinSelector;
   [SerializeField] internal Button coinSelectorBtn;
   [SerializeField] internal List<Chip> Coins;
+  // Full-screen button behind the fan; clicking it closes the selector
+  [SerializeField] private Button chipSelectorBackdrop;
+  [SerializeField] private float backdropAlpha = 0.1f;
+  [SerializeField] private float backdropFadeDuration = 0.2f;
+  private Image backdropImage;
+
+  [Header("Chip Fan")]
+  [SerializeField] private float fanRadius = 300f;
+  // Degrees, 0 = right, 90 = up; chips spread evenly from start to end
+  [SerializeField] private float fanStartAngle = 150f;
+  [SerializeField] private float fanEndAngle = 30f;
+  [SerializeField] private float fanOpenDuration = 0.2f;
+  [SerializeField] private float fanCloseDuration = 0.15f;
+  [SerializeField] private float fanStagger = 0.02f;
+  [SerializeField] private Ease fanOpenEase = Ease.OutBack;
+  [SerializeField] private Ease fanCloseEase = Ease.InBack;
 
   [Header("Chipoptions")]
   [SerializeField] internal GameObject Repeatpanel;
@@ -303,7 +319,7 @@ public class UiManager : MonoBehaviour
 
   private void Start()
   {
-    RetractCoins();
+    CollapseCoinsInstant();
     if (coinSelectorBtn) coinSelectorBtn.onClick.RemoveAllListeners();
     if (coinSelectorBtn) coinSelectorBtn.onClick.AddListener(delegate { ToggleCoins(); });
 
@@ -356,11 +372,10 @@ public class UiManager : MonoBehaviour
     if (YesQuit_Button) YesQuit_Button.onClick.AddListener(delegate
     {
       CallOnExitFunction();
-      socketManager.ReactNativeCallOnFailedToConnect();
     });
 
     if (CloseDisconnect_Button) CloseDisconnect_Button.onClick.RemoveAllListeners();
-    if (CloseDisconnect_Button) CloseDisconnect_Button.onClick.AddListener((delegate { CallOnExitFunction(); socketManager.ReactNativeCallOnFailedToConnect(); }));
+    if (CloseDisconnect_Button) CloseDisconnect_Button.onClick.AddListener(delegate { CallOnExitFunction(); });
 
     if (CloseAD_Button) CloseAD_Button.onClick.RemoveAllListeners();
     if (CloseAD_Button) CloseAD_Button.onClick.AddListener(CallOnExitFunction);
@@ -453,82 +468,38 @@ public class UiManager : MonoBehaviour
     if (SinglePlayerBtn) SinglePlayerBtn.onClick.AddListener(delegate { OnSinglePlayerMode(); MultiplayerBtn.interactable = true; SinglePlayerBtn.interactable = false; });
 
     Repeatbtn.onClick.RemoveAllListeners();
-    Repeatbtn.onClick.AddListener(delegate
-    {
-      Repeatbtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        Repeatbtn.transform.DOScale(1f, 0.1f);
-      });
-      socketManager.SendRepeat();
-    });
+    Repeatbtn.onClick.AddListener(delegate { gameManager.RequestRepeat(); });
 
     Undubtn.onClick.RemoveAllListeners();
-    Undubtn.onClick.AddListener(delegate
-    {
-      Undubtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        Undubtn.transform.DOScale(1f, 0.1f);
-      }); 
-      socketManager.SendUndo();
-    });
+    Undubtn.onClick.AddListener(delegate { socketManager.SendUndo(); });
 
     Canclebtn.onClick.RemoveAllListeners();
-    Canclebtn.onClick.AddListener(delegate
-    {
-      Canclebtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        Canclebtn.transform.DOScale(1f, 0.1f);
-      }); 
-      socketManager.SendCancle();
-    });
+    Canclebtn.onClick.AddListener(delegate { socketManager.SendCancle(); });
 
     Doublebtn.onClick.RemoveAllListeners();
-    Doublebtn.onClick.AddListener(delegate
-    {
-      Doublebtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        Doublebtn.transform.DOScale(1f, 0.1f);
-      });
-      socketManager.SendDouble();
-    });
+    Doublebtn.onClick.AddListener(delegate { socketManager.SendDouble(); });
 
     AutoBtn.onClick.RemoveAllListeners();
     AutoBtn.onClick.AddListener(delegate
     {
-      AutoBtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        AutoBtn.transform.DOScale(1f, 0.1f);
-      });
-      gameManager.isAuto = true;
       StartBtn.interactable = false;
-      AutoBtn.gameObject.SetActive(false);
-      StopAutoBtn.gameObject.SetActive(true);
-      Repeatbtn.gameObject.SetActive(false);
+      gameManager.SetAuto(true);
     });
 
     StartBtn.onClick.RemoveAllListeners();
-    StartBtn.onClick.AddListener(delegate
-    {
-      StartBtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        StartBtn.transform.DOScale(1f, 0.1f);
-      });
-      socketManager.SendStart();
-    });
+    StartBtn.onClick.AddListener(delegate { socketManager.SendStart(); });
 
     StopAutoBtn.onClick.RemoveAllListeners();
     StopAutoBtn.onClick.AddListener(delegate
     {
-      StopAutoBtn.transform.DOScale(1.1f, 0.1f).SetEase(Ease.OutBack).OnComplete(() =>
-      {
-        StopAutoBtn.transform.DOScale(1f, 0.1f);
-      });
-      gameManager.isAuto = false;
       StartBtn.interactable = true;
-      Repeatbtn.gameObject.SetActive(true);
-      ToggleRepeteAuto(false);
+      gameManager.SetAuto(false);
     });
 
+    foreach (Button btn in new[] { Repeatbtn, Undubtn, Canclebtn, Doublebtn, AutoBtn, StartBtn, StopAutoBtn })
+    {
+      if (!btn.GetComponent<ButtonAnimator>()) btn.gameObject.AddComponent<ButtonAnimator>();
+    }
 
     // HistoryLeft.onClick.RemoveAllListeners();
     // HistoryLeft.onClick.AddListener(delegate { if (CurrentHistoryPage - 1 > 0) socketManager.SendHistory(CurrentHistoryPage - 1); });
@@ -540,13 +511,13 @@ public class UiManager : MonoBehaviour
 
     if (gameManager.showLeaderboard)
     {
-      for (int i = 0; i < WinnerPlayers.Count; i++)
-      {
-        int index = i;
+      // for (int i = 0; i < WinnerPlayers.Count; i++)
+      // {
+      //   int index = i;
 
-        WinnerPlayers[i].Leaderboardbtn.onClick.RemoveAllListeners();
-        WinnerPlayers[i].Leaderboardbtn.onClick.AddListener(() => OnClickLeaderboardIcon(index));
-      }
+      //   WinnerPlayers[i].Leaderboardbtn.onClick.RemoveAllListeners();
+      //   WinnerPlayers[i].Leaderboardbtn.onClick.AddListener(() => OnClickLeaderboardIcon(index));
+      // }
     }
   }
 
@@ -673,12 +644,12 @@ public class UiManager : MonoBehaviour
 
   internal void SetgameRulePanel()
   {
-    if (socketManager?.roomData?.payload?.stats == null) return;
+    if (socketManager?.roomData?.stats == null) return;
 
     int invalidStats = 0;
     string firstInvalidStat = null;
 
-    foreach (string statJson in socketManager.roomData.payload.stats)
+    foreach (string statJson in socketManager.roomData.stats)
     {
       // Parse the JSON string
       DiceData diceData = JsonUtility.FromJson<DiceData>(statJson);
@@ -718,7 +689,7 @@ public class UiManager : MonoBehaviour
 
     if (invalidStats > 0)
     {
-      Debug.LogError("[JOIN_LEVEL] stats: skipped " + invalidStats + " of " + socketManager.roomData.payload.stats.Count
+      Debug.LogError("[JOIN_LEVEL] stats: skipped " + invalidStats + " of " + socketManager.roomData.stats.Count
           + " entries with dice outside 1-6, e.g. " + firstInvalidStat);
     }
 
@@ -862,7 +833,6 @@ public class UiManager : MonoBehaviour
     StartCoroutine(socketManager.CloseSocket());
     isExit = true;
     audioController.PlayButtonAudio();
-
   }
 
 
@@ -970,86 +940,126 @@ public class UiManager : MonoBehaviour
       ExpandCoins();
   }
 
+  private void SetupChipSelectorBackdrop()
+  {
+    if (!chipSelectorBackdrop) return;
+
+    backdropImage = chipSelectorBackdrop.GetComponent<Image>();
+    SetBackdropAlpha(0f);
+    chipSelectorBackdrop.gameObject.SetActive(false);
+    chipSelectorBackdrop.onClick.AddListener(RetractCoins);
+  }
+
+  private void SetBackdropAlpha(float alpha)
+  {
+    if (!backdropImage) return;
+
+    Color color = backdropImage.color;
+    color.a = alpha;
+    backdropImage.color = color;
+  }
+
+  private void FadeBackdrop(bool show)
+  {
+    if (!backdropImage) return;
+
+    backdropImage.DOKill();
+    // Stops blocking clicks as soon as the close starts, not when the fade ends
+    backdropImage.raycastTarget = show;
+
+    if (show)
+    {
+      chipSelectorBackdrop.gameObject.SetActive(true);
+      backdropImage.DOFade(backdropAlpha, backdropFadeDuration);
+    }
+    else
+    {
+      backdropImage.DOFade(0f, backdropFadeDuration)
+          .OnComplete(() => chipSelectorBackdrop.gameObject.SetActive(false));
+    }
+  }
+
   private void ExpandCoins()
   {
     if (audioController) audioController.PlayWLAudio("openChip");
+    FadeBackdrop(true);
 
     Vector3 center = coinSelector.transform.localPosition;
-
-    float radius = 300f;
-    float startAngle = 150f;
-    float endAngle = 30f;
-
     int expandCount = Coins.Count - 1;
     int arcIndex = 0;
 
     for (int i = 0; i < Coins.Count; i++)
     {
-      if (audioController) audioController.PlayWLAudio("openChip");
-
-      // CHANGE THIS LINE - Skip the currently selected coin
       if (i == uiSelectedCoin)
         continue;
 
-      var coin = Coins[i];
+      Chip coin = Coins[i];
+      coin.transform.DOKill();
       coin.gameObject.SetActive(true);
 
-      float t = (float)arcIndex / (expandCount - 1);
-      float angle = Mathf.Lerp(startAngle, endAngle, t);
+      float t = expandCount > 1 ? (float)arcIndex / (expandCount - 1) : 0.5f;
+      float rad = Mathf.Lerp(fanStartAngle, fanEndAngle, t) * Mathf.Deg2Rad;
+      Vector3 targetPos = center + new Vector3(Mathf.Cos(rad), Mathf.Sin(rad), 0f) * fanRadius;
 
-      float rad = angle * Mathf.Deg2Rad;
-
-      Vector3 targetPos = center + new Vector3(
-          Mathf.Cos(rad) * radius,
-          Mathf.Sin(rad) * radius,
-          0
-      );
-
-      coin.transform.DOLocalMove(targetPos, duration)
-          .SetDelay(arcIndex * 0.01f);
+      coin.transform.DOLocalMove(targetPos, fanOpenDuration)
+          .SetEase(fanOpenEase)
+          .SetDelay(arcIndex * fanStagger);
       arcIndex++;
     }
 
     isExpanded = true;
   }
+
   private void RetractCoins()
   {
-    Vector3 center = coinSelector.transform.localPosition;
+    if (!isExpanded) return;
 
     if (audioController) audioController.PlayWLAudio("coinSelect");
+    FadeBackdrop(false);
+
+    Vector3 center = coinSelector.transform.localPosition;
 
     for (int i = 0; i < Coins.Count; i++)
     {
-      var coin = Coins[i];
-
-      // Don't retract the currently selected coin
       if (i == uiSelectedCoin)
         continue;
 
-      coin.transform.DOLocalMove(center, duration)
-          .SetEase(Ease.InBack)
-          .OnComplete(() =>
-          {
-            if (i != uiSelectedCoin)
-              coin.gameObject.SetActive(false);
-          });
+      Chip coin = Coins[i];
+      coin.transform.DOKill();
+      coin.transform.DOLocalMove(center, fanCloseDuration)
+          .SetEase(fanCloseEase)
+          .OnComplete(() => coin.gameObject.SetActive(false));
     }
 
-    if (gameManager.currentTotalBet > 0)
-    {
-      // Your logic here
-    }
-    else
-    {
-      Repeatpanel.SetActive(true);
-    }
-
+    ShowRepeatIfNoBet();
     isExpanded = false;
+  }
+
+  private void CollapseCoinsInstant()
+  {
+    Vector3 center = coinSelector.transform.localPosition;
+
+    for (int i = 0; i < Coins.Count; i++)
+    {
+      if (i == uiSelectedCoin)
+        continue;
+
+      Coins[i].transform.localPosition = center;
+      Coins[i].gameObject.SetActive(false);
+    }
+
+    ShowRepeatIfNoBet();
+    isExpanded = false;
+  }
+
+  private void ShowRepeatIfNoBet()
+  {
+    if (gameManager.currentTotalBet <= 0)
+      Repeatpanel.SetActive(true);
   }
 
   public void OnCoinSelected(Button selectedCoin)
   {
-    // Find the index of the selected coin
     int newSelectedIndex = -1;
     for (int i = 0; i < Coins.Count; i++)
     {
@@ -1060,13 +1070,10 @@ public class UiManager : MonoBehaviour
       }
     }
 
-    var tempImage = coinSelector.chipImage.sprite;
     coinSelector.chipImage.sprite = selectedCoin.image.sprite;
 
     TMP_Text selectorText = coinSelector.GetComponentInChildren<TMP_Text>();
     TMP_Text selectedText = selectedCoin.GetComponentInChildren<TMP_Text>();
-
-    string tempText = selectorText.text;
     selectorText.text = selectedText.text;
 
     Chip selectorChip = coinSelector.GetComponent<Chip>();
@@ -1080,7 +1087,6 @@ public class UiManager : MonoBehaviour
     selectorChip.chipAmount = selectedChip.chipAmount;
     selectedChip.chipAmount = tempchip;
 
-    // ADD THIS LINE - Update the selected coin index
     uiSelectedCoin = newSelectedIndex;
 
     RetractCoins();
@@ -1089,39 +1095,11 @@ public class UiManager : MonoBehaviour
       Coins[i].gameObject.SetActive(true);
     }
     selectedCoin.gameObject.SetActive(false);
+
+    // The picked chip is skipped by the retract, so park it under the main chip for its next fan-out
+    selectedCoin.transform.DOKill();
+    selectedCoin.transform.localPosition = coinSelector.transform.localPosition;
   }
-
-  // public void OnCoinSelected(Button selectedCoin)
-  // {
-  //     // SetChipoption(false);
-
-  //     var tempImage = coinSelector.chipImage.sprite;
-  //     coinSelector.chipImage.sprite = selectedCoin.image.sprite;
-  //     //selectedCoin.image.sprite = tempImage;
-
-  //     TMP_Text selectorText = coinSelector.GetComponentInChildren<TMP_Text>();
-  //     TMP_Text selectedText = selectedCoin.GetComponentInChildren<TMP_Text>();
-
-  //     string tempText = selectorText.text;
-  //     selectorText.text = selectedText.text;
-  //     // selectedText.text = tempText;
-
-  //     Chip selectorChip = coinSelector.GetComponent<Chip>();
-  //     Chip selectedChip = selectedCoin.GetComponent<Chip>();
-
-  //     int tempIndex = selectorChip.chipIndex;
-  //     selectorChip.chipIndex = selectedChip.chipIndex;
-  //     selectedChip.chipIndex = tempIndex;
-  //     // Debug.Log("mmmmmmmmmmmmmmmmm" + selectorChip.chipIndex);
-  //     RetractCoins();
-  //     for (int i = 0; i < Coins.Count; i++)
-  //     {
-  //         Coins[i].gameObject.SetActive(true);
-  //     }
-  //     selectedCoin.gameObject.SetActive(false);
-  //     //  SetgameRulePanel();
-
-  // }
 
   #endregion
 
@@ -1341,7 +1319,7 @@ public class UiManager : MonoBehaviour
     if (currentNetBet < 0)
       currentNetBet = 0;
 
-    NetBet.text = "Rs" + currentNetBet.ToString();
+    NetBet.text = currentNetBet.ToString();
   }
   internal void SetChipoption(bool istrue, bool db = true, bool canc = true, bool undo = true)
   {
@@ -1379,7 +1357,7 @@ public class UiManager : MonoBehaviour
     Diamond.SetActive(false);
     StartBtn.gameObject.SetActive(false);
     gameManager.isSinglePlayer = false;
-    gameManager.REsetAllBetObject();
+    gameManager.ResetAllBetOptions();
     gameManager.ResetTimer();
     SetNetBetPanel(0);
     SinglePlayerBtn.image.sprite = NotSelectedSprite;
@@ -1393,17 +1371,26 @@ public class UiManager : MonoBehaviour
     Diamond.SetActive(true);
     StartBtn.gameObject.SetActive(true);
     gameManager.isSinglePlayer = true;
-    gameManager.REsetAllBetObject();
+    gameManager.ResetAllBetOptions();
     SetNetBetPanel(0);
     SinglePlayerBtn.image.sprite = SelectedSprite;
     MultiplayerBtn.image.sprite = NotSelectedSprite;
   }
 
-  internal void ToggleRepeteAuto(bool isAuto)
+  internal void SetBetActionButtons(bool interactable)
   {
-    AutoBtn.gameObject.SetActive(isAuto);
-    StopAutoBtn.gameObject.SetActive(isAuto);
-    Repeatbtn.gameObject.SetActive(!isAuto);
+    Undubtn.interactable = interactable;
+    Canclebtn.interactable = interactable;
+    Doublebtn.interactable = interactable;
+  }
+
+  // Again, Auto and Auto Stop share one position, so exactly one is shown
+  internal void SetRepeatSlot(bool autoOn, bool offerAuto, bool canRepeat)
+  {
+    StopAutoBtn.gameObject.SetActive(autoOn);
+    AutoBtn.gameObject.SetActive(!autoOn && offerAuto);
+    Repeatbtn.gameObject.SetActive(!autoOn && !offerAuto);
+    Repeatbtn.interactable = canRepeat;
   }
 
   internal void OnClickLeaderboardIcon(int index)

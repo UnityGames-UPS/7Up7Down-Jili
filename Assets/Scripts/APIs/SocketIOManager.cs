@@ -2,47 +2,23 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
-
 using System;
-
-using UnityEngine.Networking;
-
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using Best.SocketIO;
 using Best.SocketIO.Events;
 
-using System.Runtime.Serialization;
-using Best.HTTP.Shared;
-
 public class SocketIOManager : MonoBehaviour
 {
-  [SerializeField]
-  internal GameManager gameManager;
-  [FormerlySerializedAs("homepage")]
-  [SerializeField]
-  internal StartupPage startupPage;
-
-  [SerializeField]
-  private UiManager uiManager;
-
+  [SerializeField] internal GameManager gameManager;
+  [SerializeField] internal StartupPage startupPage;
+  [SerializeField] private UiManager uiManager;
   [SerializeField] internal LogToggles logs = new LogToggles();
 
-  internal Root roomData;
-  internal Root gameLoopData;
-  internal Root gameCashOut;
-  internal Root BetChipData;
-  internal Root OtherChipData;
-  internal Root CashoutData;
-  internal Root doubleBetData;
-  internal Root ReturnHome;
-  internal Root TotalPlayerCountData;
-  internal Root TimeRemaining;
-  internal Root DiceResult;
-  internal Root BonusData;
+  // Payload of the last JOIN_LEVEL / PLAYER_MODE reply
+  internal JoinLevelPayload roomData;
   internal GameData initialData = null;
-  // internal Payload resultData = null;
   internal Player playerdata = null;
 
   internal bool isResultdone = false;
@@ -196,7 +172,6 @@ public class SocketIOManager : MonoBehaviour
     gameSocket.On<string>("game:init", ManageInitData);
     gameSocket.On<string>("game:bet_placed", ManageOtherPlayerbets);
     gameSocket.On<string>("game:round_start", OnGameLoopStarted);
-    gameSocket.On<string>("game:round_end", OnGameLoopEnd);
     gameSocket.On<string>("game:cashout", OnCashout);
     gameSocket.On<string>("game:lobby_count", OnLobbyCount);
     gameSocket.On<string>("game:betting_timer", OnListenTimeEvent);
@@ -250,13 +225,13 @@ public class SocketIOManager : MonoBehaviour
       Debug.LogWarning("Session expired detected");
       OnDisconnected();
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (JSManager != null) JSManager.SendCustomMessage("session_expired");
+      if (JSManager != null) JSManager.SendCustomMessage("session_expired");
 #endif
     }
     else
     {
 #if UNITY_WEBGL && !UNITY_EDITOR
-            if (JSManager != null) JSManager.SendCustomMessage("error");
+      if (JSManager != null) JSManager.SendCustomMessage("error");
 #endif
     }
   }
@@ -264,28 +239,24 @@ public class SocketIOManager : MonoBehaviour
   {
     gameManager.OnGameLoaded();
     LogEvent(logs.timer, "[game:betting_timer]", data);
-    //  ParseResponse(data);
-    TimeRemaining = JsonUtility.FromJson<Root>(data);
-    gameManager.SetBetTimer();
+    var timer = JsonUtility.FromJson<BettingTimerEvent>(data);
+    gameManager.SetBetTimer(timer.timeRemaining);
   }
   private void OnDiceResult(string data)
   {
     gameManager.OnGameLoaded();
     LogEvent(logs.round, "[game:dice_result]", data);
-    //  ParseResponse(data);
-    DiceResult = JsonUtility.FromJson<Root>(data);
-    gameManager.ManageResult(DiceResult);
+    gameManager.ManageResult(JsonUtility.FromJson<DiceResultEvent>(data));
   }
 
   void OnGameBonus(string data)
   {
     LogEvent(logs.round, "[game:bonus]", data);
-    BonusData = JsonConvert.DeserializeObject<Root>(data);
-    foreach (var b in BonusData.bonus)
+    var bonusEvent = JsonConvert.DeserializeObject<BonusEvent>(data);
+    foreach (var b in bonusEvent.bonus)
     {
       gameManager.ManageBonus(b.Value, b.Key);
     }
-
   }
   private void OnSocketState(bool state)
   {
@@ -465,13 +436,6 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
-  internal void ReactNativeCallOnFailedToConnect() //BackendChanges
-  {
-#if UNITY_WEBGL && !UNITY_EDITOR
-    JSManager.SendCustomMessage("onExit");
-#endif
-  }
-
   internal IEnumerator CloseSocket() //Back2 Start
   {
     RaycastBlocker.SetActive(true);
@@ -489,40 +453,6 @@ public class SocketIOManager : MonoBehaviour
 #if UNITY_WEBGL && !UNITY_EDITOR
     JSManager.SendCustomMessage("OnExit"); //Telling the react platform user wants to quit and go back to homepage
 #endif
-  }
-  public void Reconnect()
-  {
-    if (logs.connection) Debug.Log("[SOCKET] Reconnecting with saved token");
-
-    SocketOptions options = new SocketOptions();
-    options.AutoConnect = false;
-    options.Reconnection = false;
-    options.Timeout = TimeSpan.FromSeconds(3);
-    options.ConnectWith = Best.SocketIO.Transports.TransportTypes.WebSocket;
-
-    // Use saved token here
-    options.Auth = (manager, socket) =>
-    {
-      return new { token = savedToken };
-    };
-    SetupSocketManager(options);
-    //         // Close old manager if any
-    //         manager?.Close();
-
-    // #if UNITY_EDITOR
-    //         manager = new SocketManager(new Uri(TestSocketURI), options);
-    // #else
-    //     manager = new SocketManager(new Uri(SocketURI), options);
-    // #endif
-
-    //         // Get correct namespace
-    //         if (string.IsNullOrEmpty(nameSpace))
-    //             gameSocket = manager.Socket;
-    //         else
-    //             gameSocket = manager.GetSocket("/" + nameSpace);
-
-    //         manager.Open();
-    //         DontDisplayDisconected = false;
   }
 
   // Prints the raw JSON, then one "path: value" line per field
@@ -545,10 +475,10 @@ public class SocketIOManager : MonoBehaviour
 
   void ManageInitData(string jsonObject)
   {
-    Root myData = null;
+    InitEvent myData = null;
     try
     {
-      myData = JsonConvert.DeserializeObject<Root>(jsonObject);
+      myData = JsonConvert.DeserializeObject<InitEvent>(jsonObject);
     }
     catch (Exception ex)
     {
@@ -586,286 +516,169 @@ public class SocketIOManager : MonoBehaviour
     RaycastBlocker.SetActive(false);
   }
 
+  private void SendRequest<TPayload>(string type, TPayload payload, Action<string> onAck, bool log)
+  {
+    string json = JsonConvert.SerializeObject(new Request<TPayload> { type = type, payload = payload });
+    LogEvent(log, $"[{type}] sent:", json);
+    gameSocket.ExpectAcknowledgement<string>(onAck).Emit("request", json);
+  }
+
   internal void SendModeSelection(string mode)
   {
     StartCoroutine(gameManager.ShowLoadingPage("Switch Mode"));
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "PLAYER_MODE";
-    message.payload.playerMode = mode;
-
-    string json = JsonUtility.ToJson(message);
-    LogEvent(logs.requests, "[PLAYER_MODE] sent:", json);
-    // SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnModeChange).Emit("request", json);
+    SendRequest("PLAYER_MODE", new PlayerModePayload { playerMode = mode }, OnModeChange, logs.requests);
   }
 
-  internal void EmitJoinLevel(string Room)
-  {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "JOIN_LEVEL";
-    message.payload.level = Room;
+  internal void EmitJoinLevel(string Room) =>
+    SendRequest("JOIN_LEVEL", new LevelPayload { level = Room }, OnRoomEnter, logs.requests);
 
-    string json = JsonUtility.ToJson(message);
-    LogEvent(logs.requests, "[JOIN_LEVEL] sent:", json);
-    // SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnRoomEnter).Emit("request", json);
-  }
+  internal void BetPlaced(int amountIndex, string betType, string betOption) =>
+    SendRequest("PLACE_BET", new BetPayload { amountIndex = amountIndex, betType = betType, betOption = betOption }, OnBetAcknowledged, logs.bets);
 
-  internal void BetPlaced(int amountIndex, string betType, string betOption)
-  {
-    double chipValue;
+  internal void SendUndo() => SendRequest("UNDO_BET", new EmptyPayload(), OnUndo, logs.betActions);
 
-    if (double.TryParse(uiManager.coinSelector.chipAmount, out chipValue))
-    {
-      if (chipValue > playerdata.balance)
-      {
-        gameManager.PlayPopup("Low Balance");
-        // Low balance logic here
+  internal void SendRepeat() => SendRequest("REPEAT_BET", new EmptyPayload(), OnRepeat, logs.betActions);
 
-        return;
-      }
-    }
-    BetMessage message = new BetMessage();
-    message.type = "PLACE_BET";
-    message.payload = new BetPayload();
+  internal void SendCancle() => SendRequest("CANCEL_BET", new EmptyPayload(), OnCancel, logs.betActions);
 
-    message.payload.amountIndex = amountIndex;
-    message.payload.betType = betType;
-    message.payload.betOption = betOption;
+  internal void SendDouble() => SendRequest("DOUBLE_BET", new EmptyPayload(), OnDouble, logs.betActions);
 
-    string json = JsonUtility.ToJson(message);
-    LogEvent(logs.bets, "[PLACE_BET] sent:", json);
+  internal void SendStart() => SendRequest("START_GAME", new EmptyPayload(), OnStart, logs.requests);
 
-    gameSocket.ExpectAcknowledgement<string>(OnBetAcknowledged).Emit("request", json);
-  }
-  internal void SendUndo()
-  {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "UNDO_BET";
-    // message.payload.level = Room;
-
-    string json = JsonUtility.ToJson(message);
-
-    //  SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnUndo).Emit("request", json);
-  }
-  internal void SendRepeat()
-  {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "REPEAT_BET";
-    // message.payload.level = Room;
-
-    string json = JsonUtility.ToJson(message);
-
-    //  SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnRepeat).Emit("request", json);
-  }
-  internal void SendCancle()
-  {
-
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "CANCEL_BET";
-    // message.payload.level = Room;
-
-    string json = JsonUtility.ToJson(message);
-
-    //  SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnCancle).Emit("request", json);
-  }
-  internal void SendDouble()
-  {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "DOUBLE_BET";
-    // message.payload.level = Room;
-
-    string json = JsonUtility.ToJson(message);
-
-    // SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnDouble).Emit("request", json);
-  }
-  internal void SendStart()
-  {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "START_GAME";
-    // message.payload.level = Room;
-
-    string json = JsonUtility.ToJson(message);
-
-    // SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnStart).Emit("request", json);
-  }
   internal void SendHome()
   {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "HOME";
-    // message.payload.level = Room;
     loadingPageLoading = false;
     NormalStart = false;
     DontDisplayDisconected = true;
-    string json = JsonUtility.ToJson(message);
-    LogEvent(logs.requests, "[HOME] sent:", json);
-    // SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnHome).Emit("request", json);
+    SendRequest("HOME", new EmptyPayload(), OnHome, logs.requests);
   }
 
-  internal void SendHistory(int Pages)
+  internal void SendHistory(int Pages) =>
+    SendRequest("BET_HISTORY", new HistoryPayload { page = Pages }, OnHistory, logs.requests);
+
+  void ApplyBalance(double balance)
   {
-    SendRoom message = new SendRoom();
-    message.payload = new Payload();
-    message.type = "BET_HISTORY";
-    message.payload.page = Pages;
-
-    string json = JsonUtility.ToJson(message);
-    LogEvent(logs.requests, "[BET_HISTORY] sent:", json);
-
-    // SendDataWithNamespace("request", json);
-    gameSocket.ExpectAcknowledgement<string>(OnHistory).Emit("request", json);
+    playerdata.balance = balance;
+    gameManager.UpdatePlayerbalance(balance.ToString());
   }
 
   void OnHome(string json)
   {
     gameManager.ClearAllBets();
     LogEvent(logs.requests, "[HOME] reply:", json);
-    ReturnHome = JsonUtility.FromJson<Root>(json);
-    // gameManager.SetPlayerCountOnReturn(ReturnHome.payload.lobby, ReturnHome.payload.balance);
-    playerdata.balance = ReturnHome.payload.balance;
+    var reply = JsonUtility.FromJson<Reply<HomePayload>>(json);
+    playerdata.balance = reply.payload.balance;
     StartCoroutine(gameManager.ShowLoadingPage("Changing Game Hall.."));
     gameManager.GamePage.SetActive(true);
-    //  Invoke(nameof(Reconnect), 0.2f);
-    // gameManager.currentRoom = initialData.levels[0];
     EmitJoinLevel(gameManager.currentRoom);
-
   }
+
   void OnHistory(string json)
   {
     // Not bound to UI yet: only logged until the dice history layout is built.
     LogEvent(logs.requests, "[BET_HISTORY] reply:", json);
   }
+
   void OnStart(string json)
   {
     LogEvent(logs.bets, "[START_GAME] reply:", json);
-    // doubleBetData = JsonUtility.FromJson<Root>(json);
-    // if (doubleBetData.success)
-    // {
-    //     gameManager.DoubleBets(doubleBetData.payload.bets);
-    //     gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
-    //     playerdata.balance = doubleBetData.payload.balance;
-    //     gameManager.currentTotalBet = doubleBetData.payload.totalBet;
-    // }
-    // else
-    // {
-    //     gameManager.PlayPopup(doubleBetData.payload.message);
-    // }
   }
+
   void OnDouble(string json)
   {
-    LogEvent(logs.bets, "[DOUBLE_BET] reply:", json);
-    doubleBetData = JsonUtility.FromJson<Root>(json);
-    if (doubleBetData.success)
+    LogEvent(logs.betActions, "[DOUBLE_BET] reply:", json);
+    var reply = JsonUtility.FromJson<Reply<DoubleBetPayload>>(json);
+    if (reply.success)
     {
-      gameManager.DoubleBets(doubleBetData.payload.bets);
-      gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
-      playerdata.balance = doubleBetData.payload.balance;
-      gameManager.currentTotalBet = doubleBetData.payload.totalBet;
+      gameManager.OnBetsDoubled(reply.payload.bets);
+      ApplyBalance(reply.payload.balance);
+      gameManager.currentTotalBet = reply.payload.totalBet;
     }
     else
     {
-      gameManager.PlayPopup(doubleBetData.payload.message);
+      gameManager.OnBetRejected(reply.payload?.message);
     }
   }
+
   void OnRepeat(string json)
   {
-    LogEvent(logs.bets, "[REPEAT_BET] reply:", json);
-    doubleBetData = JsonUtility.FromJson<Root>(json);
-    if (doubleBetData.success)
+    LogEvent(logs.betActions, "[REPEAT_BET] reply:", json);
+    var reply = JsonUtility.FromJson<Reply<RepeatBetPayload>>(json);
+    gameManager.OnRepeatReply();
+    if (reply.success)
     {
-      gameManager.RepeAtBet(doubleBetData.payload.bets);
-      gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
-      playerdata.balance = doubleBetData.payload.balance;
-      gameManager.currentTotalBet = doubleBetData.payload.totalBet;
-      uiManager.ToggleRepeteAuto(true);
+      gameManager.OnBetsRepeated(reply.payload.bets);
+      ApplyBalance(reply.payload.balance);
+      gameManager.currentTotalBet = reply.payload.totalBet;
       if (gameManager.isAuto && gameManager.isSinglePlayer) SendStart();
     }
     else
     {
-      //gameManager.PlayPopup(doubleBetData.payload.message);
+      if (gameManager.isAuto) gameManager.SetAuto(false);
+      gameManager.OnBetRejected(reply.payload?.message);
     }
   }
-  void OnCancle(string json)
-  {
 
-    LogEvent(logs.bets, "[CANCEL_BET] reply:", json);
-    doubleBetData = JsonUtility.FromJson<Root>(json);
-    if (doubleBetData.success)
+  void OnCancel(string json)
+  {
+    LogEvent(logs.betActions, "[CANCEL_BET] reply:", json);
+    var reply = JsonUtility.FromJson<Reply<CancelBetPayload>>(json);
+    if (reply.success)
     {
-      gameManager.CancleBets();
-      gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
-      playerdata.balance = doubleBetData.payload.balance;
+      gameManager.OnBetsCancelled();
+      ApplyBalance(reply.payload.balance);
       gameManager.currentTotalBet = 0;
-      //  uiManager.SetChipoption(false);
     }
   }
+
   void OnUndo(string json)
   {
-    LogEvent(logs.bets, "[UNDO_BET] reply:", json);
-    doubleBetData = JsonUtility.FromJson<Root>(json);
-    if (doubleBetData.success)
+    LogEvent(logs.betActions, "[UNDO_BET] reply:", json);
+    var reply = JsonUtility.FromJson<Reply<UndoBetPayload>>(json);
+    if (reply.success)
     {
-      // Pass the betOption and amount from the undo response
-      gameManager.UnduBets(
-          doubleBetData.payload.bet.betId,
-          doubleBetData.payload.bet.betOption,
-          doubleBetData.payload.refundAmount
-      );
-
-      gameManager.UpdatePlayerbalance(doubleBetData.payload.balance.ToString());
-      playerdata.balance = doubleBetData.payload.balance;
-      gameManager.currentTotalBet = doubleBetData.payload.totalBet;
+      gameManager.OnBetUndone(reply.payload.bet.betOption, reply.payload.refundAmount);
+      ApplyBalance(reply.payload.balance);
+      gameManager.currentTotalBet = reply.payload.totalBet;
     }
   }
+
   void OnRoomEnter(string json)
   {
     LogEvent(logs.requests, "[JOIN_LEVEL] reply:", json);
-    roomData = JsonUtility.FromJson<Root>(json);
-    if (roomData.success == false)
+    var reply = JsonUtility.FromJson<Reply<JoinLevelPayload>>(json);
+    if (reply.success == false)
     {
       Debug.LogError("[JOIN_LEVEL] failed: " + json);
       return;
     }
+    roomData = reply.payload;
     startupPage.SetCanLoadFull(true);
     gameManager.SetCoinData();
     uiManager.SetgameRulePanel();
-    gameManager.SetOtherplayerData(roomData.payload.leaderboards);
+    gameManager.SetOtherplayerData(roomData.leaderboards);
   }
+
+  // Reply shape is still being agreed with backend; read as a JOIN_LEVEL reply until then
   void OnModeChange(string json)
   {
     LogEvent(logs.requests, "[PLAYER_MODE] reply:", json);
-    roomData = JsonUtility.FromJson<Root>(json);
-    if (roomData.success == false)
-    {
-      return;
+    var reply = JsonUtility.FromJson<Reply<JoinLevelPayload>>(json);
+    if (reply.success == false) return;
 
-    }
+    roomData = reply.payload;
     gameManager.SetCoinData();
     uiManager.SetgameRulePanel();
-    gameManager.SetOtherplayerData(roomData.payload.leaderboards);
+    gameManager.SetOtherplayerData(roomData.leaderboards);
   }
 
+  // Broadcast for every bet in the room, the player's own included
   void ManageOtherPlayerbets(string data)
   {
     LogEvent(logs.otherBets, "[game:bet_placed]", data);
-    OtherChipData = JsonUtility.FromJson<Root>(data);
-    gameManager.ManageBrodcastBetsOtherPlayers(OtherChipData);
-
+    gameManager.OnOpponentBetPlaced(JsonUtility.FromJson<Bet>(data));
   }
+
   void OnGameLoopStarted(string json)
   {
     if (!loadingPageLoading)
@@ -875,60 +688,37 @@ public class SocketIOManager : MonoBehaviour
     }
     NormalStart = true;
     LogEvent(logs.round, "[game:round_start]", json);
-    gameLoopData = JsonUtility.FromJson<Root>(json);
     gameManager.OnGameLoopStart();
   }
-  void OnGameLoopEnd(string data)
-  {
-    gameLoopData = JsonUtility.FromJson<Root>(data);
 
-    LogEvent(logs.round, "[game:round_end]", data);
-
-
-    gameManager.EndLoop();
-
-
-
-    // Only start game AFTER validating
-  }
   void OnCashout(string data)
   {
     LogEvent(logs.cashout, "[game:cashout]", data);
-    // CashoutData = JsonUtility.FromJson<Root>(data);
-    CashoutData = JsonConvert.DeserializeObject<Root>(data);
-
-    gameManager.ManagePayouts();
-
+    gameManager.ManagePayouts(JsonConvert.DeserializeObject<CashoutEvent>(data));
   }
 
   void OnLobbyCount(string data)
   {
     LogEvent(logs.lobby, "[game:lobby_count]", data);
-    TotalPlayerCountData = JsonUtility.FromJson<Root>(data);
-    gameManager.SetPlayerCountOnReturn(TotalPlayerCountData.lobby, playerdata.balance);
+    var lobbyCount = JsonUtility.FromJson<LobbyCountEvent>(data);
+    gameManager.SetPlayerCountOnReturn(lobbyCount.lobby, playerdata.balance);
   }
 
   private void OnBetAcknowledged(string data)
   {
-
     LogEvent(logs.bets, "[PLACE_BET] reply:", data);
-    BetChipData = JsonUtility.FromJson<Root>(data);
-    if (BetChipData.success)
+    var reply = JsonUtility.FromJson<Reply<PlaceBetPayload>>(data);
+    if (reply.success)
     {
-      gameManager.ManageBrodcastBetsPlayer();
-      gameManager.UpdatePlayerbalance(BetChipData.payload.balance.ToString());
-      gameManager.currentTotalBet = BetChipData.payload.totalBet;
-      playerdata.balance = BetChipData.payload.balance;
+      gameManager.OnPlayerBetPlaced(reply.payload);
+      ApplyBalance(reply.payload.balance);
+      gameManager.currentTotalBet = reply.payload.totalBet;
     }
     else
     {
-      gameManager.PlayPopup(BetChipData.payload.message);
+      gameManager.OnBetRejected(reply.payload?.message);
     }
-
-
   }
-
-
 }
 
 // Console log categories; warnings and errors are never gated
@@ -941,71 +731,158 @@ public class LogToggles
   public bool round = true;
   public bool timer = false;
   public bool bets = true;
+  // Undo, Again, Clear and Double requests and their replies
+  public bool betActions = true;
   public bool otherBets = false;
   public bool cashout = true;
   public bool leaderboard = true;
   public bool lobby = false;
 }
 
+// Outbound "request" envelope; payload classes below hold only what each action sends
 [Serializable]
-public class SendMode
-{
-  public string playerMode
-;
-}
-
-[Serializable]
-public class SendRoom
+public class Request<TPayload>
 {
   public string type;
-  public Payload payload;
+  public TPayload payload;
 }
 
 [Serializable]
-public class Payload
+public class EmptyPayload { }
+
+[Serializable]
+public class LevelPayload
 {
   public string level;
-  public string playerMode
-;
+}
 
+[Serializable]
+public class PlayerModePayload
+{
+  public string playerMode;
+}
+
+[Serializable]
+public class HistoryPayload
+{
+  public int page;
+}
+
+// Ack envelope of every "request" reply
+[Serializable]
+public class Reply<TPayload>
+{
+  public bool success;
+  public TPayload payload;
+}
+
+// A rejected request is expected to carry only the reason
+[Serializable]
+public class ReplyPayload
+{
+  public string message;
+}
+
+[Serializable]
+public class JoinLevelPayload : ReplyPayload
+{
   public string roomId;
-
+  public string oldRoomId;
+  public string level;
   public int playerCount;
-  public Leaderboards leaderboards;
-
+  public List<Bet> bets;
+  // Each entry is itself a JSON string, parsed as DiceData
   public List<string> stats;
+  public Leaderboards leaderboards;
+  public RoundState roundState;
+}
+
+[Serializable]
+public class RoundState
+{
+  public string roundId;
+  public long startedAt;
+  public long bettingEndTime;
+  public long serverTime;
+  public int timeRemaining;
+  public string phase;
+}
+
+[Serializable]
+public class PlaceBetPayload : ReplyPayload
+{
+  public string username;
   public string betId;
   public string betOption;
-  public string message;
   public int amount;
   public int totalBet;
-
-
-  public int balance;
-  public List<Bet> bets;
-
-
-  public int refundAmount;
-  public Bet bet;
-
-  public int page;
-
-  public Meta meta;
-
-  public Lobby lobby;
-
-
+  public double balance;
 }
-[System.Serializable]
+
+[Serializable]
+public class UndoBetPayload : ReplyPayload
+{
+  public int refundAmount;
+  public int totalBet;
+  public double balance;
+  public Bet bet;
+}
+
+[Serializable]
+public class DoubleBetPayload : ReplyPayload
+{
+  public int totalBet;
+  public double balance;
+  public List<DoubledBet> bets;
+}
+
+[Serializable]
+public class RepeatBetPayload : ReplyPayload
+{
+  public int totalBet;
+  public double balance;
+  public List<Bet> bets;
+}
+
+[Serializable]
+public class CancelBetPayload : ReplyPayload
+{
+  // Total refunded across the cancelled bets
+  public int amount;
+  public double balance;
+  public List<Bet> bets;
+}
+
+[Serializable]
+public class HomePayload : ReplyPayload
+{
+  public double balance;
+}
+
+// One placed bet: the game:bet_placed broadcast and the entries of undo, repeat and cancel replies
+[Serializable]
 public class Bet
 {
-  public int oldAmount;
-  public int newAmount;
   public string betId;
   public string betType;
   public string betOption;
-  public int delta;
   public int amount;
+  public string username;
+  public string userId;
+  public string level;
+  public string sessionId;
+  public int betIndex;
+}
+
+[Serializable]
+public class DoubledBet
+{
+  public string betId;
+  public string betType;
+  public string betOption;
+  public int oldAmount;
+  public int newAmount;
+  public int delta;
 }
 
 
@@ -1017,12 +894,6 @@ public class BetPayload
   public string betOption;
 }
 
-[System.Serializable]
-public class BetMessage
-{
-  public string type;
-  public BetPayload payload;
-}
 [System.Serializable]
 public class Richest
 {
@@ -1092,43 +963,61 @@ public class Player
   public string username;
 }
 [Serializable]
-public class Root
+public class InitEvent
 {
   public string id;
   public GameData gameData;
   public Player player;
+}
 
+[Serializable]
+public class RoundStartEvent
+{
   public string roundId;
-
-  public bool success;
-  public Payload payload;
-  public int playerCount;
-
   public long startedAt;
+  public long bettingEndTime;
+  public long serverTime;
+  public int playerCount;
+}
 
-
-  public string username;
-  public string betId;
-  public string betType;
-  public string betOption;
-  public int amount;
-  public List<Payout> payouts;
-
-  public Lobby lobby;
-
-
-  //new
-
+[Serializable]
+public class BettingTimerEvent
+{
+  public string roundId;
   public long serverTime;
   public long bettingEndTime;
   public int timeRemaining;
+}
 
+[Serializable]
+public class BonusEvent
+{
+  public string roundId;
+  public Dictionary<string, int> bonus;
+}
+
+[Serializable]
+public class DiceResultEvent
+{
+  public string roundId;
   public int dice1;
   public int dice2;
   public int sum;
+  public string matchSide;
+}
 
-  public Dictionary<string, int> bonus;
+[Serializable]
+public class CashoutEvent
+{
+  public List<Payout> payouts;
   public Leaderboards leaderboards;
+}
+
+[Serializable]
+public class LobbyCountEvent
+{
+  public Lobby lobby;
+  public int totalCount;
 }
 [System.Serializable]
 public class SideBets

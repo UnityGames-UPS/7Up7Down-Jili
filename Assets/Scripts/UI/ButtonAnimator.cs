@@ -1,54 +1,40 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.UI;
 using DG.Tweening;
-using UnityEngine.UI; // For DOTween
 
-public class ButtonAnimator : MonoBehaviour, IPointerDownHandler, IPointerUpHandler
+// Bounces a button the moment it is pressed; does nothing while it is not interactable
+[RequireComponent(typeof(Button))]
+public class ButtonAnimator : MonoBehaviour, IPointerDownHandler
 {
-    private Transform buttonTransform; // Assign the Button's transform in the Inspector.
+    [SerializeField] private float popScale = 1.1f;
+    [SerializeField] private float popTime = 0.1f;
+
     private Button button;
-    private float OrignalScale;
-    private void OnValidate() {
-        if (buttonTransform == null)
-        {
-            buttonTransform = transform; // Default to this GameObject's transform.
-            OrignalScale=transform.localScale.x;
-            button = transform.GetComponent<Button>();
-        }
+    private Vector3 originalScale;
+    private Tween bounce;
+
+    private void Awake()
+    {
+        button = GetComponent<Button>();
+        originalScale = transform.localScale;
     }
 
-    private void Start() {
-        if (buttonTransform == null)
-        {
-            buttonTransform = transform; // Default to this GameObject's transform.
-            OrignalScale=transform.localScale.x;
-            button = transform.GetComponent<Button>();
-        }   
-    }
-
-    // Called when the button is pressed.
     public void OnPointerDown(PointerEventData eventData)
     {
-        // Debug.Log("Pointer Down");
-        if(button.interactable)
-            PressedAnimation(buttonTransform);
+        if (!button.interactable) return;
+
+        bounce?.Kill();
+        transform.localScale = originalScale;
+        bounce = DOTween.Sequence()
+            .Append(transform.DOScale(originalScale * popScale, popTime).SetEase(Ease.OutBack))
+            .Append(transform.DOScale(originalScale, popTime));
     }
 
-    // Called when the button is released.
-    public void OnPointerUp(PointerEventData eventData)
+    // A button hidden mid-bounce must not come back enlarged
+    private void OnDisable()
     {
-        // Debug.Log("Pointer Up");
-        if(button.interactable)
-            OnClickedAnimation(buttonTransform);
-    }
-
-    void PressedAnimation(Transform transform)
-    {
-        transform.DOScale(0.8f, 0.2f); // Scale down on press.
-    }
-
-    void OnClickedAnimation(Transform transform)
-    {
-        transform.DOScale(OrignalScale, 0.2f); // Scale back to normal size after release.
+        bounce?.Kill();
+        transform.localScale = originalScale;
     }
 }

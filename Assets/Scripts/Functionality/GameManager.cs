@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using TMPro;
 using DG.Tweening;
@@ -27,54 +28,30 @@ public class GameManager : MonoBehaviour
   // [SerializeField] private TMP_Text WinChance_text;
   // [SerializeField] private TMP_Text ResponseMult_text;
 
-  [Header("Options Text")]
-  [SerializeField] private OptionPrefab TwoSixTxt;
-  [SerializeField] private OptionPrefab SevenTxt;
-  [SerializeField] private OptionPrefab EightTwelveTxt;
-
-  [SerializeField] private OptionPrefab OptionQTxt;
-  [SerializeField] private OptionPrefab OptionWTxt;
-  [SerializeField] private OptionPrefab OptionETxt;
-  [SerializeField] private OptionPrefab OptionRTxt;
-  [SerializeField] private OptionPrefab OptionTTxt;
-  [SerializeField] private OptionPrefab OptionYTxt;
-  [SerializeField] private OptionPrefab OptionUTxt;
-  [SerializeField] private OptionPrefab OptionITxt;
-  [SerializeField] private OptionPrefab OptionOTxt;
-  [SerializeField] private OptionPrefab OptionPTxt;
-  [SerializeField] private List<OptionPrefab> AllOptions;
+  [Header("Bet Options")]
+  // Order must match the server's betOptions: 8-12, 7, 2-6, then totals 2-6 and 8-12
+  [FormerlySerializedAs("AllOptions")]
+  [SerializeField] private List<BetOptionView> betOptions;
+  private readonly Dictionary<string, BetOptionView> betOptionsByKey = new Dictionary<string, BetOptionView>();
 
   [Header("Jili")]
   [SerializeField] private TMP_Text Timer_text;
   [SerializeField] private Image CircleTimerFill;
 
   [Header("Chip")]
-  [SerializeField] private GameObject DealersPoint;
-  [SerializeField] private List<Sprite> PlayerChipSprite;
-  [SerializeField] private List<Sprite> otherChipSprite;
-  [SerializeField] private GameObject chipPrefab;
-  [SerializeField] private int initialCount = 20;
-  [SerializeField] private Transform poolParent;
+  [SerializeField] private ChipManager chipManager;
 
-  private readonly List<GameObject> pool = new List<GameObject>();
 
   [Header("popup")]
-  [SerializeField] private Button BetBlocker;
-  [SerializeField] private GameObject BlockerObj;
-  [SerializeField] private TMP_Text BlockerText;
-  [SerializeField] private Transform popStart;
-  [SerializeField] private Transform popCenter;
-  [SerializeField] private Transform popEnd;
-  [SerializeField] private float moveY = 60f;
-  [SerializeField] private float duration = 0.8f;
+  // Raycast-blocking overlay over the bet views while betting is closed
+  [SerializeField] private GameObject BetBlocker;
+  [SerializeField] private MessagePopup messagePopup;
+  private bool bettingClosed;
+  // Player had chips down when betting last closed: offers Auto now and Again next round
+  private bool hadBetsAtClose;
+  // Again was pressed and its reply has not arrived yet
+  private bool repeatPending;
 
-  private Vector3 startPos;
-  private Tween coinTween;
-
-
-  [SerializeField] private float moveDuration = 0.5f;
-  [SerializeField] private float holdDuration = 1f;
-  private Coroutine animRoutine;
   [Header("Dice Animation")]
   [SerializeField] private DiceResultmanager DiceAnimator;
   [SerializeField] internal List<Sprite> FirstDiceSprite;
@@ -85,6 +62,8 @@ public class GameManager : MonoBehaviour
   [SerializeField] private ImageAnimation Extrapay;
   [SerializeField] private ImageAnimation Betlocked;
   [SerializeField] private ImageAnimation Plesebetnow;
+  // Parent of the two banners above; kept click-through so they never cover the bet views
+  [SerializeField] private CanvasGroup roundBannerGroup;
   [SerializeField] internal List<int> LeaderboadrdShow = new List<int>();
   // Off while the scene has no leaderboard UI; data is still received and logged
   [SerializeField] internal bool showLeaderboard = false;
@@ -103,30 +82,26 @@ public class GameManager : MonoBehaviour
   private double animationduration = 2f;
   internal bool isAuto = false;
   internal bool isSinglePlayer = false;
-  private Coroutine StartGameCorutine;
-  private Coroutine EndGameCorutine;
 
   private Vector3 endPos = new Vector3(0, -10, 0);
 
 
-  private List<ChipData> PlayerChips = new List<ChipData>();
-  internal List<ChipData> OtherPlayerChips = new List<ChipData>();
+  private readonly List<(string betId, string username, BetOptionView option)> opponentBets =
+    new List<(string betId, string username, BetOptionView option)>();
 
 
   void Awake()
   {
-
-    for (int i = 0; i < initialCount; i++)
-      AddChip();
+    foreach (var option in betOptions) option.Clicked += OnBetOptionClicked;
+    BetBlocker.SetActive(false);
+    if (roundBannerGroup) roundBannerGroup.blocksRaycasts = false;
   }
   private void Start()
   {
     BetCounter = 0;
     LoadingPage.SetActive(false);
     GamePage.SetActive(true);
-
-    BetBlocker.onClick.RemoveAllListeners();
-    BetBlocker.onClick.AddListener(() => PlayPopup("This Round is alredy closed.\nPlease wait for next round."));
+    RefreshBetButtons();
   }
 
 
@@ -172,55 +147,36 @@ public class GameManager : MonoBehaviour
   }
   internal void SetOptionData()
   {
-    AllOptions[2].SetData(2, "2-6", socketManager.initialData.wagers.main_bets.number_2_6.payout, "main_bets");
-    AllOptions[1].SetData(1, "7", socketManager.initialData.wagers.main_bets.number_7.payout, "main_bets");
-    AllOptions[0].SetData(0, "8-12", socketManager.initialData.wagers.main_bets.number_8_12.payout, "main_bets");
-    OptionQTxt.SetData(3, "2", socketManager.initialData.wagers.side_bets.s_2.payout, "side_bets");
-    OptionWTxt.SetData(4, "3", socketManager.initialData.wagers.side_bets.s_3.payout, "side_bets");
-    OptionETxt.SetData(5, "4", socketManager.initialData.wagers.side_bets.s_4.payout, "side_bets");
-    OptionRTxt.SetData(6, "5", socketManager.initialData.wagers.side_bets.s_5.payout, "side_bets");
-    OptionTTxt.SetData(7, "6", socketManager.initialData.wagers.side_bets.s_6.payout, "side_bets");
-    OptionYTxt.SetData(8, "8", socketManager.initialData.wagers.side_bets.s_8.payout, "side_bets");
-    OptionUTxt.SetData(9, "9", socketManager.initialData.wagers.side_bets.s_9.payout, "side_bets");
-    OptionITxt.SetData(10, "10", socketManager.initialData.wagers.side_bets.s_10.payout, "side_bets");
-    OptionOTxt.SetData(11, "11", socketManager.initialData.wagers.side_bets.s_11.payout, "side_bets");
-    OptionPTxt.SetData(12, "12", socketManager.initialData.wagers.side_bets.s_12.payout, "side_bets");
+    var main = socketManager.initialData.wagers.main_bets;
+    var side = socketManager.initialData.wagers.side_bets;
 
+    // Same order as betOptions and the server's betOptions array
+    string[] labels = { "8-12", "7", "2-6", "2", "3", "4", "5", "6", "8", "9", "10", "11", "12" };
+    List<int>[] payouts =
+    {
+      main.number_8_12.payout, main.number_7.payout, main.number_2_6.payout,
+      side.s_2.payout, side.s_3.payout, side.s_4.payout, side.s_5.payout, side.s_6.payout,
+      side.s_8.payout, side.s_9.payout, side.s_10.payout, side.s_11.payout, side.s_12.payout
+    };
+
+    betOptionsByKey.Clear();
+    for (int i = 0; i < betOptions.Count; i++)
+    {
+      string betKey = socketManager.initialData.betOptions[i];
+      betOptions[i].Setup(betKey, i < 3 ? "main_bets" : "side_bets", labels[i], payouts[i]);
+      betOptionsByKey[betKey] = betOptions[i];
+    }
   }
 
   internal void SetCoinData()
   {
     ResetCoinsToDefault();
-    TotalPlayer_text.text = socketManager.roomData.payload.playerCount.ToString();
-    string room = currentRoom;
-    List<int> data = null;
+    TotalPlayer_text.text = socketManager.roomData.playerCount.ToString();
 
-    switch (room)
-    {
-      case "level_1":
-        data = socketManager.initialData.bets.level_1;
-        break;
-
-      case "level_2":
-        data = socketManager.initialData.bets.level_2;
-        break;
-
-      case "level_3":
-        data = socketManager.initialData.bets.level_3;
-        break;
-
-      case "level_4":
-        data = socketManager.initialData.bets.level_4;
-        break;
-      case "level_5":
-        data = socketManager.initialData.bets.level_5;
-        break;
-      case "level_6":
-        data = socketManager.initialData.bets.level_6;
-        break;
-    }
-
+    List<int> data = CurrentRoomChips();
     if (data == null) return;
+
+    chipManager.SetDenominations(data);
 
     uiManager.coinSelector.Chiptext.text = uiManager.FormatNumber(data[0]);
     uiManager.coinSelector.chipAmount = data[0].ToString();
@@ -243,15 +199,12 @@ public class GameManager : MonoBehaviour
   }
   public void ResetCoinsToDefault()
   {
-    // Force select 0 index
-    uiManager.coinSelector.chipImage.sprite = PlayerChipSprite[0];
+    uiManager.coinSelector.chipImage.sprite = chipManager.GetPlayerSprite(0);
 
-    // Reset all coins visuals
     for (int i = 0; i < uiManager.Coins.Count; i++)
     {
-      uiManager.Coins[i].chipImage.sprite = PlayerChipSprite[i];
+      uiManager.Coins[i].chipImage.sprite = chipManager.GetPlayerSprite(i);
     }
-
   }
 
 
@@ -271,34 +224,34 @@ public class GameManager : MonoBehaviour
     if (socketManager.logs.leaderboard) Debug.Log("[LEADERBOARD] " + DescribeLeaderboard(leaderboard));
     if (!showLeaderboard) return;
 
-    string mainPlayerName = uiManager.MainPlayers.playername.text;
-    Sprite mainPlayerIcon = uiManager.MainPlayers.PlayerIcon.sprite;
+    // string mainPlayerName = uiManager.MainPlayers.playername.text;
+    // Sprite mainPlayerIcon = uiManager.MainPlayers.PlayerIcon.sprite;
 
-    // One WinnerPlayers slot per top winner; unused slots stay hidden
-    foreach (var item in uiManager.WinnerPlayers)
-      item.gameObject.SetActive(false);
+    // // One WinnerPlayers slot per top winner; unused slots stay hidden
+    // foreach (var item in uiManager.WinnerPlayers)
+    //   item.gameObject.SetActive(false);
 
-    if (leaderboard.winners == null) return;
+    // if (leaderboard.winners == null) return;
 
-    int winnersCount = Mathf.Min(leaderboard.winners.Count, uiManager.WinnerPlayers.Count);
+    // int winnersCount = Mathf.Min(leaderboard.winners.Count, uiManager.WinnerPlayers.Count);
 
-    for (int i = 0; i < winnersCount; i++)
-    {
-      Winner win = leaderboard.winners[i];
+    // for (int i = 0; i < winnersCount; i++)
+    // {
+    //   Winner win = leaderboard.winners[i];
 
-      // Other players have no avatar from the server, so they get a random icon
-      Sprite iconToUse = (win.username == mainPlayerName)
-          ? mainPlayerIcon
-          : uiManager.UserIcons[UnityEngine.Random.Range(0, uiManager.UserIcons.Count)];
+    //   // Other players have no avatar from the server, so they get a random icon
+    //   Sprite iconToUse = (win.username == mainPlayerName)
+    //       ? mainPlayerIcon
+    //       : uiManager.UserIcons[UnityEngine.Random.Range(0, uiManager.UserIcons.Count)];
 
-      uiManager.WinnerPlayers[i].SetData(
-          win.username,
-          win.totalWins.ToString(),
-          iconToUse
-      );
+    //   uiManager.WinnerPlayers[i].SetData(
+    //       win.username,
+    //       win.totalWins.ToString(),
+    //       iconToUse
+    //   );
 
-      uiManager.WinnerPlayers[i].gameObject.SetActive(true);
-    }
+    //   uiManager.WinnerPlayers[i].gameObject.SetActive(true);
+    // }
   }
 
   string DescribeLeaderboard(Leaderboards leaderboard)
@@ -321,20 +274,58 @@ public class GameManager : MonoBehaviour
   #region GamePlay
 
 
-  internal void SetBetTimer()
+  void SetBettingClosed(bool closed)
   {
-
-    BetBlocker.gameObject.SetActive(false);
-
-    foreach (var obj in AllOptions)
+    bettingClosed = closed;
+    BetBlocker.SetActive(closed);
+    if (closed)
     {
-
-      obj.BlackTransParent.SetActive(false);
-
+      if (messagePopup) messagePopup.Hide();
+      hadBetsAtClose = PlayerHasBets();
+      if (!hadBetsAtClose) isAuto = false;
     }
+    RefreshBetButtons();
+  }
 
-    int time = socketManager.TimeRemaining.timeRemaining;
-    time--;
+  bool PlayerHasBets() => betOptions.Any(o => o.HasPlayerBet);
+
+  void RefreshBetButtons()
+  {
+    bool hasBets = PlayerHasBets();
+    uiManager.SetBetActionButtons(!bettingClosed && hasBets);
+
+    // Auto takes over from Again as soon as the player has chips down
+    bool offerAuto = hasBets || (bettingClosed && hadBetsAtClose);
+    bool canRepeat = !bettingClosed && hadBetsAtClose && !repeatPending;
+    uiManager.SetRepeatSlot(isAuto, offerAuto, canRepeat);
+  }
+
+  internal void RequestRepeat()
+  {
+    if (repeatPending) return;
+    repeatPending = true;
+    RefreshBetButtons();
+    socketManager.SendRepeat();
+  }
+
+  internal void OnRepeatReply()
+  {
+    repeatPending = false;
+    RefreshBetButtons();
+  }
+
+  internal void SetAuto(bool on)
+  {
+    isAuto = on;
+    RefreshBetButtons();
+  }
+
+  internal void SetBetTimer(int timeRemaining)
+  {
+    SetBettingClosed(false);
+    foreach (var option in betOptions) option.SetDimmed(false);
+
+    int time = timeRemaining - 1;
     StartBetTimer(time);
 
     if (time == 5)
@@ -343,60 +334,34 @@ public class GameManager : MonoBehaviour
     }
     else if (time == 0)
     {
-      // BetBlocker.gameObject.SetActive(true);
       audioManager.PlayGirlAudio("nomorebets");
 
-      BetBlocker.gameObject.SetActive(true);
-      foreach (var obj in AllOptions)
-      {
-        if (obj.PlayerbetPos.gameObject.activeInHierarchy)
-        {
-          obj.BlackTransParent.SetActive(false);
-        }
-        else
-        {
-          obj.BlackTransParent.SetActive(true);
-        }
-      }
-      // audioManager.PlayWLAudio("betDone");
-      Betlocked.StopAnimation();
-      Betlocked.gameObject.SetActive(true);
-      Betlocked.StartAnimation();
-    }
-    if (time % 5 == 4)
-    {
-
-
+      SetBettingClosed(true);
+      foreach (var option in betOptions) option.SetDimmed(!option.HasPlayerBet);
+      PlayRoundBanner(Betlocked);
     }
   }
+
+  void PlayRoundBanner(ImageAnimation banner)
+  {
+    if (roundBannerGroup) roundBannerGroup.blocksRaycasts = false;
+    banner.StopAnimation();
+    banner.gameObject.SetActive(true);
+    banner.StartAnimation();
+  }
+
   internal void OnGameLoopStart()
   {
-    foreach (var item in PlayerChips)
-    {
-      if (item.chip != null)
-      {
-        ReturnChip(item.chip.GetComponent<Chip>());
-      }
-    }
-    PlayerChips.Clear();
-
-    // Clear other players' chips
-    foreach (var item in OtherPlayerChips)
-    {
-      if (item.chip != null)
-      {
-        ReturnChip(item.chip.GetComponent<Chip>());
-      }
-    }
-    OtherPlayerChips.Clear();
-    REsetAllBetObject();
+    repeatPending = false;
+    SetBettingClosed(false);
+    chipManager.ReturnAllItemsToPool();
+    opponentBets.Clear();
+    ResetAllBetOptions();
+    if (messagePopup) messagePopup.Hide();
     audioManager.PlayWLAudio("betNow");
-    Plesebetnow.StopAnimation();
-    Plesebetnow.gameObject.SetActive(true);
-    Plesebetnow.StartAnimation();
+    PlayRoundBanner(Plesebetnow);
 
-    if (isAuto) socketManager.SendRepeat();
-    else uiManager.ToggleRepeteAuto(false);
+    if (isAuto) RequestRepeat();
     ResetBonusUI();
   }
   private Tween timerTween;
@@ -433,11 +398,9 @@ public class GameManager : MonoBehaviour
     lastTime = int.MaxValue;
     CircleTimerFill.fillAmount = 1f;
   }
-  internal void ManageResult(Root diceResult)
+  internal void ManageResult(DiceResultEvent diceResult)
   {
     uiManager.HideBetLimitPanel();
-    if (uiManager.currentNetBet == 0) uiManager.ToggleRepeteAuto(false);
-    else uiManager.AutoBtn.gameObject.SetActive(true);
     audioManager.PlayWLAudio("shakingDice");
     DiceAnimator.StartAnimation(FirstDiceSprite[diceResult.dice1 - 1], SecondDiceSprite[diceResult.dice2 - 1]);
     CircleTimerFill.gameObject.transform.parent.gameObject.SetActive(false);
@@ -446,113 +409,59 @@ public class GameManager : MonoBehaviour
 
 
   }
-  IEnumerator ManageAfterResult(Root diceResult)
+  IEnumerator ManageAfterResult(DiceResultEvent diceResult)
   {
     yield return new WaitForSeconds(3f);
     int total = diceResult.dice1 + diceResult.dice2;
     audioManager.StopWLAaudio();
     uiManager.UpdateStats(total, uiManager.DiceSprites[diceResult.dice1 - 1], uiManager.DiceSprites[diceResult.dice2 - 1], true);
+
+    // betOptions order: 8-12, 7, 2-6, then totals 2-6 and 8-12
     if (total == 7)
     {
-      AllOptions[1].BlackTransParent.SetActive(false);
-      playWin(AllOptions[1]);
+      ShowWin(betOptions[1]);
     }
     else if (total < 7)
     {
-      AllOptions[2].BlackTransParent.SetActive(false);
-      AllOptions[total + 1].BlackTransParent.SetActive(false);
-      playWin(AllOptions[2]);
-      playWin(AllOptions[total + 1]);
-
+      ShowWin(betOptions[2]);
+      ShowWin(betOptions[total + 1]);
     }
     else
     {
-      AllOptions[0].BlackTransParent.SetActive(false);
-
-      AllOptions[total].BlackTransParent.SetActive(false);
-      playWin(AllOptions[0]);
-      playWin(AllOptions[total]);
-    }
-
-  }
-  void playWin(OptionPrefab item)
-  {
-    if (item.PlayerbetPos.gameObject.activeInHierarchy)
-    {
-      item.winAnimation.gameObject.SetActive(true);
-      item.winAnimation.StopAnimation();
-      item.winAnimation.StartAnimation();
+      ShowWin(betOptions[0]);
+      ShowWin(betOptions[total]);
     }
   }
-  internal void EndLoop()
-  {
 
-    EndGameCorutine = StartCoroutine(GameLoop());
+  void ShowWin(BetOptionView option)
+  {
+    option.SetDimmed(false);
+    if (option.HasPlayerBet) option.PlayWin();
   }
 
-  IEnumerator GameLoop()
+  internal void ManagePayouts(CashoutEvent cashout)
   {
-    if (StartGameCorutine != null)
-    {
-      StopCoroutine(StartGameCorutine);
-      StartGameCorutine = null;
-    }
-    uiManager.CalculateAndShowPercentage();
-    PlayWinAnimations();
+    StartCoroutine(ManagePayout(cashout));
+  }
+  IEnumerator ManagePayout(CashoutEvent cashout)
+  {
+    foreach (var option in betOptions) option.SetDimmed(true);
 
     yield return new WaitForSeconds(2f);
-
-    if (currentWin >= 1)
-    {
-      int winInt = Mathf.FloorToInt((float)currentWin);
-
-      PlayPopup("You Won\n" + winInt);
-      playtheCoin("+" + winInt);
-    }
-
-    currentWin = 0;
-    ResetAllBetUI();
-
-  }
-
-  internal void ManagePayouts()
-  {
-    StartCoroutine(ManagePayout());
-  }
-  IEnumerator ManagePayout()
-  {
-    foreach (var item in AllOptions)
-    {
-      // item.BG.SetActive(true);
-      item.BlackTransParent.SetActive(true);
-
-    }
-    // MoveAllChipstohome();
-    // yield return new WaitForSeconds(1f);
+    ManagePayments(cashout.payouts);
     yield return new WaitForSeconds(2f);
-    ManagePayments(socketManager.CashoutData.payouts);
-    yield return new WaitForSeconds(2f);
-    DistributeAllPayout();
-    foreach (var op in AllOptions)
+    DistributePayouts(cashout.payouts);
+    foreach (var option in betOptions)
     {
-      op.ResetOptionUI();
-      op.BlackTransParent.SetActive(false);
+      option.ClearAllBets();
+      option.SetDimmed(false);
     }
-    SetOtherplayerData(socketManager.CashoutData.leaderboards);
+    SetOtherplayerData(cashout.leaderboards);
     uiManager.SetNetBetPanel(0);
     yield return new WaitForSeconds(2f);
-    // foreach (var op in AllOptions)
-    // {
-    //     op.ResetOptionUI();
-    //     op.BlackTransParent.SetActive(false);
-    // }
     if (isSinglePlayer && isAuto) socketManager.SendRepeat();
   }
 
-  void DistributeAllPayout()
-  {
-    DistributePayouts(socketManager.CashoutData.payouts);
-  }
   void ManagePayments(List<Payout> payouts)
   {
     Dictionary<string, int> playerBets = new Dictionary<string, int>();
@@ -574,52 +483,29 @@ public class GameManager : MonoBehaviour
       }
     }
 
-    // Player payouts to PlayerbetPos
-    foreach (var bet in playerBets)
-    {
-      OptionPrefab op = FindOption(bet.Key);
-      SpawnPayoutChips(bet.Value, op.PlayerbetPos.transform, op, true);
-      //  op.ResetOptionUI();
-    }
-
-    // Other player payouts to OtherPlayerbetPos
-    foreach (var bet in otherBets)
-    {
-      OptionPrefab op = FindOption(bet.Key);
-      SpawnPayoutChips(bet.Value, op.OtherPlayerbetPos.transform, op, false);
-      //  op.ResetOptionUI();
-    }
+    foreach (var bet in playerBets) PayOntoOption(bet.Key, bet.Value, true);
+    foreach (var bet in otherBets) PayOntoOption(bet.Key, bet.Value, false);
   }
-  void SpawnPayoutChips(int amount, Transform target, OptionPrefab op, bool isPlayer)
+
+  // Dealer pays winnings onto the option before they are collected by the winners
+  void PayOntoOption(string betKey, int amount, bool isPlayer)
   {
-    if (amount <= 0) return;
+    if (!TryGetOption(betKey, out BetOptionView option)) return;
 
-    List<int> chips = BreakAmountIntoChips(amount, FindRoom());
-
-    foreach (int chipAmount in chips)
+    if (isPlayer)
     {
-      Chip chip = GetChip();
-      Sprite sprite = isPlayer ? PlayerChipSprite[0] : otherChipSprite[0];
-      chip.SetData(sprite, chipAmount.ToString(), 0);
-
-      RectTransform rt = chip.GetComponent<RectTransform>();
-      rt.SetParent(poolParent);
-
-      // Spawn at DealerPoint
-      rt.position = DealersPoint.transform.position;
-      rt.localScale = Vector3.one;
-
-      // Move from DealerPoint to option prefab and disappear
-      rt.DOMove(target.position, 1f).SetEase(Ease.InQuad).OnComplete(() =>
+      chipManager.PayFromDealer(option.PlayerReferenceChip, amount, true, chipAmount =>
       {
-        // Add to option prefab text
-        if (isPlayer)
-          op.AddPlayerChip(chipAmount, sprite);
-        else
-          op.AddOtherPlayerChip(chipAmount, sprite);
-
-        ReturnChip(chip);
-        // op.ResetOptionUI();
+        option.AddPlayerBet(chipAmount);
+        RefreshPlayerChip(option);
+      });
+    }
+    else
+    {
+      chipManager.PayFromDealer(option.OpponentReferenceChip, amount, false, chipAmount =>
+      {
+        option.AddOpponentBet(chipAmount);
+        RefreshOpponentChip(option);
       });
     }
   }
@@ -636,18 +522,12 @@ public class GameManager : MonoBehaviour
 
       bool isCurrentPlayer = payout.username == currentPlayer;
 
-      // Move chips from each winning option to the player
       foreach (var bet in payout.betWins)
       {
-        OptionPrefab op = FindOption(bet.Key);
-        if (op == null) continue;
+        if (!TryGetOption(bet.Key, out BetOptionView option)) continue;
 
-        // Get the start position (where the chips are currently displayed)
-        Transform startPos = isCurrentPlayer ? op.PlayerbetPos.transform : op.OtherPlayerbetPos.transform;
-        int winAmount = bet.Value;
-
-        // Spawn chips that move from option to player
-        MoveChipsFromOptionToPlayer(startPos, target, winAmount, isCurrentPlayer);
+        ChipReference reference = isCurrentPlayer ? option.PlayerReferenceChip : option.OpponentReferenceChip;
+        chipManager.CollectToPlayer(reference, target.position, bet.Value, isCurrentPlayer);
       }
 
       // Update player balance for current player
@@ -657,7 +537,7 @@ public class GameManager : MonoBehaviour
         string balanceText = uiManager.MainPlayers.playerBalence.text;
         string numericBalance = new string(balanceText.Where(c => char.IsDigit(c) || c == '.').ToArray());
 
-        int oldBalance = int.Parse(numericBalance);
+        double oldBalance = double.Parse(numericBalance, System.Globalization.CultureInfo.InvariantCulture);
         double newBalance = payout.balance;
         currentWin = newBalance - oldBalance;
         uiManager.MainPlayers.playerBalence.text = payout.balance.ToString();
@@ -666,83 +546,17 @@ public class GameManager : MonoBehaviour
         if (currentWin >= 1)
         {
           int winInt = Mathf.FloorToInt((float)currentWin);
-          PlayPopup("You Won\n" + winInt);
           playtheCoin("+" + winInt);
         }
       }
     }
   }
-  void MoveChipsFromOptionToPlayer(Transform startPos, Transform target, int amount, bool isPlayer)
+
+
+  internal void ResetAllBetOptions()
   {
-    if (amount <= 0) return;
-
-    List<int> chips = BreakAmountIntoChips(amount, FindRoom());
-
-    foreach (int chipAmount in chips)
-    {
-      Chip chip = GetChip();
-      Sprite sprite = isPlayer ? PlayerChipSprite[0] : otherChipSprite[0];
-      chip.SetData(sprite, chipAmount.ToString(), 0);
-
-      RectTransform rt = chip.GetComponent<RectTransform>();
-      rt.SetParent(poolParent);
-      rt.position = startPos.position;
-      rt.localScale = Vector3.one;
-
-      // Move from option position to player target
-      rt.DOMove(target.position, 0.6f).SetEase(Ease.OutQuad).OnComplete(() =>
-      {
-        ReturnChip(chip);
-      });
-    }
-  }
-
-
-  internal void REsetAllBetObject()
-  {
-    foreach (var obj in AllOptions)
-    {
-      obj.PlayerbetPos.gameObject.SetActive(false);
-      obj.OtherPlayerbetPos.gameObject.SetActive(false);
-      obj.ResetOptionUI();
-    }
-
-  }
-
-
-
-  void HighlightOption(int index)
-  {
-    for (int i = 0; i < AllOptions.Count; i++)
-    {
-      bool active = (i == index);
-
-      AllOptions[i].BlackTransParent.SetActive(active);
-      // AllOptions[i].BG.SetActive(!active);
-    }
-  }
-
-
-
-
-  private void MoveChip(Transform chip, Transform startPos, Transform endPos, bool disableOnEnd, float duration = 0.4f)
-  {
-    if (chip == null || startPos == null || endPos == null)
-    {
-      Debug.LogError("ChipMover: One of the transforms is null!");
-      return;
-    }
-
-    chip.position = startPos.position;
-    chip.DOMove(endPos.position, duration)
-        .SetEase(Ease.OutQuad)
-        .OnComplete(() =>
-        {
-          if (disableOnEnd)
-          {
-            ReturnChip(chip.gameObject.GetComponent<Chip>());
-          }
-        });
+    foreach (var option in betOptions) option.ClearAllBets();
+    RefreshBetButtons();
   }
 
   #endregion
@@ -751,339 +565,91 @@ public class GameManager : MonoBehaviour
 
 
   #region  beting
-  internal void onClickOption(GameObject option)
+  void OnBetOptionClicked(BetOptionView option)
   {
-
-    OptionPrefab optionprefab = option.GetComponent<OptionPrefab>();
-
-
-    int index = uiManager.coinSelector.chipIndex;
-    double chipValue;
-    if (double.TryParse(uiManager.coinSelector.chipAmount, out chipValue))
+    if (bettingClosed) return;
+    if (double.TryParse(uiManager.coinSelector.chipAmount, out double chipValue) && chipValue > socketManager.playerdata.balance)
     {
-      if (chipValue > socketManager.playerdata.balance)
-      {
-        PlayPopup("Low Balance");
-        // Low balance logic here
-
-        return;
-      }
-    }
-    socketManager.BetPlaced(index, optionprefab.VaridontWant, socketManager.initialData.betOptions[optionprefab.Optionindex]);
-
-
-  }
-  internal void ManageBrodcastBetsPlayer()
-  {
-    if (socketManager?.BetChipData?.payload == null)
-    {
-      Debug.LogError("ManageBrodcastBetsPlayer: BetChipData or payload is null");
+      ShowMessage("Low Balance");
       return;
     }
+    socketManager.BetPlaced(uiManager.coinSelector.chipIndex, option.BetType, option.BetKey);
+  }
+
+  // Server said no: a late bet just re-locks the table, anything else is shown to the player
+  internal void OnBetRejected(string message)
+  {
+    if (string.IsNullOrEmpty(message)) return;
+
+    if (message.IndexOf("betting closed", System.StringComparison.OrdinalIgnoreCase) >= 0)
+    {
+      SetBettingClosed(true);
+      return;
+    }
+    ShowMessage(message);
+  }
+
+  void ShowMessage(string message)
+  {
+    if (messagePopup) messagePopup.Show(message);
+  }
+
+  internal void OnPlayerBetPlaced(PlaceBetPayload bet)
+  {
+    if (!TryGetOption(bet.betOption, out BetOptionView option)) return;
 
     uiManager.SetChipoption(true);
-    int totalAmount = socketManager.BetChipData.payload.amount;
-
-    List<int> roomChips = FindRoom();
-    if (roomChips == null || roomChips.Count == 0)
-    {
-      Debug.LogError($"ManageBrodcastBetsPlayer: No chip denominations found for room: {currentRoom}");
-      return;
-    }
-
-    List<int> chipPieces = BreakAmountIntoChips(totalAmount, roomChips);
-
-    OptionPrefab optionOP = FindOption(socketManager.BetChipData.payload.betOption);
-    if (optionOP == null)
-    {
-      Debug.LogError($"ManageBrodcastBetsPlayer: Could not find option for {socketManager.BetChipData.payload.betOption}");
-      return;
-    }
-
-    // CRITICAL FIX: Check PlayerbetPos and its transform BEFORE using them
-    if (optionOP.PlayerbetPos == null)
-    {
-      Debug.LogError($"ManageBrodcastBetsPlayer: PlayerbetPos is null for option {socketManager.BetChipData.payload.betOption}");
-      return;
-    }
-
-    Transform targetTransform = optionOP.PlayerbetPos.transform;
-    if (targetTransform == null)
-    {
-      Debug.LogError($"ManageBrodcastBetsPlayer: PlayerbetPos.transform is null for option {socketManager.BetChipData.payload.betOption}");
-      return;
-    }
-
-    if (optionOP.PlayerbetStartPos == null)
-    {
-      Debug.LogError($"ManageBrodcastBetsPlayer: PlayerbetStartPos is null for option {socketManager.BetChipData.payload.betOption}");
-      return;
-    }
-
-    foreach (int chipAmount in chipPieces)
-    {
-      ChipData data = new ChipData();
-      data.betId = socketManager.BetChipData.payload.betId;
-      data.amount = chipAmount;
-
-      int index = findChipindex(chipAmount, roomChips);
-      string val = chipAmount.ToString();
-
-      // Now call SpawnChip with the validated transform
-      data.chip = SpawnChip(
-          findChipSprite(chipAmount, roomChips),
-          val,
-          index,
-          optionOP.PlayerbetStartPos,
-          optionOP,  // Use the pre-validated transform
-          true,
-          0.2f
-      );
-
-      if (data.chip != null)
-      {
-        PlayerChips.Add(data);
-        UpdateMyBetOnOption(socketManager.BetChipData.payload.betOption, chipAmount);
-        uiManager.SetNetBetPanel(chipAmount);
-      }
-      else
-      {
-        Debug.LogError($"Failed to spawn chip for amount {chipAmount}");
-      }
-    }
-
-
+    PlacePlayerBet(option, bet.amount);
+    RefreshBetButtons();
   }
+
+  // Totals change now; the reference chip catches up when the flying chip lands
+  void PlacePlayerBet(BetOptionView option, int amount)
+  {
+    option.AddPlayerBet(amount);
+    uiManager.SetNetBetPanel(amount);
+    chipManager.DropPlayerChips(option.PlayerReferenceChip, amount, () => RefreshPlayerChip(option));
+  }
+
+  internal void OnOpponentBetPlaced(Bet bet)
+  {
+    if (bet.username == uiManager.MainPlayers.playername.text) return;
+    if (!TryGetOption(bet.betOption, out BetOptionView option)) return;
+
+    // A negative amount is that player's bet being cancelled
+    if (bet.amount < 0)
+    {
+      option.AddOpponentBet(bet.amount);
+      RefreshOpponentChip(option);
+      opponentBets.RemoveAll(b => b.betId == bet.betId);
+      return;
+    }
+
+    option.AddOpponentBet(bet.amount);
+    opponentBets.Add((bet.betId, bet.username, option));
+    chipManager.FlyOpponentChips(option.OpponentReferenceChip, bet.amount, () => RefreshOpponentChip(option));
+    HighlightLeaderboardBets();
+  }
+
   // Highlights bets made by the leaderboard players the user tapped
-  void ShowtheOtherPlayer()
+  void HighlightLeaderboardBets()
   {
     if (!showLeaderboard) return;
-    foreach (var chip in OtherPlayerChips)
+    foreach (var bet in opponentBets)
     {
       foreach (int index in LeaderboadrdShow)
       {
-        if (chip.username == uiManager.WinnerPlayers[index].playername.text)
-        {
-          OptionPrefab op = chip.betOptionK;
-          op.PurpleBorderAnimation.gameObject.SetActive(true);
-        }
+        if (bet.username == uiManager.WinnerPlayers[index].playername.text) bet.option.ShowLeaderboardHighlight();
       }
     }
   }
-
-  internal void ManageBrodcastBetsOtherPlayers(Root chipdata)
-  {
-    // Handle cancellation (negative amount)
-    if (chipdata.amount < 0)
-    {
-      ClearOtherPlayerbets(chipdata);
-      return;
-    }
-
-    // Do not show own chip here
-    if (chipdata.username == uiManager.MainPlayers.playername.text)
-      return;
-
-    List<int> roomChips = FindRoom();
-    int totalAmount = chipdata.amount;
-
-    // Break large amount into individual chips
-    List<int> chipPieces = BreakAmountIntoChips(totalAmount, roomChips);
-
-    foreach (int piece in chipPieces)
-    {
-      int index = findChipindex(piece, roomChips);
-
-      string val = piece.ToString();
-
-      ChipData data = new ChipData();
-      data.betId = chipdata.betId;
-      data.amount = piece;
-      data.username = chipdata.username; // Store username
-
-      data.chip = SpawnChip(
-          findOtherPlayerChipSprite(piece, roomChips),
-          val,
-          index,
-          TotalPlayer_text.transform,
-          FindOption(chipdata.betOption),
-          false
-      );
-      data.betOptionK = FindOption(chipdata.betOption);
-      OtherPlayerChips.Add(data);
-    }
-    ShowtheOtherPlayer();
-  }
-  void ClearOtherPlayerbets(Root chipdata)
-  {
-    // Remove only chips from this specific betId and username
-    for (int i = OtherPlayerChips.Count - 1; i >= 0; i--)
-    {
-      var chips = OtherPlayerChips[i];
-
-      if (chips.betId == chipdata.betId)
-      {
-        if (chips.chip != null)
-        {
-          Chip c = chips.chip.GetComponent<Chip>();
-          ReturnChip(c);
-        }
-        OtherPlayerChips.RemoveAt(i);
-      }
-    }
-
-    // Update the UI for this option (subtract the amount)
-    OptionPrefab option = FindOption(chipdata.betOption);
-    if (option != null && chipdata.amount < 0)
-    {
-      // Negative amount means cancellation - subtract from other player's bet
-      option.AddOtherPlayerChip(chipdata.amount, null);
-    }
-  }
-
-
-
-  // GameObject SpawnChip(Sprite sprite, string amount, int chipindex, Transform startPoint, OptionPrefab op, float moveTime = 0.4f)
-  // {
-
-
-  //     Chip chip = GetChip();
-  //     chip.SetData(sprite, amount, chipindex);
-
-  //     RectTransform chipRT = chip.GetComponent<RectTransform>();
-  //     chipRT.SetParent(poolParent);
-  //     chipRT.localScale = Vector3.one;
-
-  //     Vector2 size = op.chiparea.rect.size;
-  //     Vector2 randomPos = new Vector2(
-  //         UnityEngine.Random.Range(-size.x * 0.5f, size.x * 0.5f),
-  //         UnityEngine.Random.Range(-size.y * 0.5f, size.y * 0.5f)
-  //     );
-
-  //     chipRT.position = startPoint.position;
-  //     chipRT.DOMove(op.chiparea.TransformPoint(randomPos), moveTime);
-
-  //     return chip.gameObject;
-  // }
-
-  GameObject SpawnChip(Sprite sprite, string amount, int chipindex, Transform startPoint, OptionPrefab op, bool playerbet, float moveTime = 0.4f)
-  {
-    Chip chip = GetChip();
-    chip.SetData(sprite, amount, chipindex);
-
-    RectTransform chipRT = chip.GetComponent<RectTransform>();
-    chipRT.SetParent(poolParent);
-    chipRT.localScale = Vector3.zero;
-
-    // Start position
-    chipRT.position = startPoint.position;
-    Vector3 targetPos;
-    // Exact target position
-    if (playerbet) targetPos = op.PlayerbetPos.transform.position;
-    else targetPos = op.OtherPlayerbetPos.transform.position;
-    int chipAmount = int.Parse(amount);
-    Sequence seq = DOTween.Sequence();
-
-    seq.Append(chipRT.DOScale(1.4f, moveTime * 0.5f).SetEase(Ease.OutBack));
-    seq.Join(chipRT.DOMove(targetPos, moveTime).SetEase(Ease.OutQuad));
-    seq.Append(chipRT.DOScale(1f, moveTime * 0.2f));
-    seq.OnComplete(() =>
-{
-  if (playerbet)
-  {
-    // Get the appropriate sprite for this chip amount
-    Sprite chipSpriteToShow = GetChipSpriteForAmount(chipAmount, true);
-
-    // Update the bet text and chip sprite on the option prefab
-    op.AddPlayerChip(chipAmount, chipSpriteToShow);
-
-    // Return the chip to pool
-    ReturnChip(chip);
-  }
-  else
-  {
-    // Get the appropriate sprite for other player's chip
-    Sprite chipSpriteToShow = GetChipSpriteForAmount(chipAmount, false);
-
-    // For other players, just update the UI
-    op.AddOtherPlayerChip(chipAmount, chipSpriteToShow);
-
-    // Return the chip to pool
-    ReturnChip(chip);
-  }
-});
-    return chip.gameObject;
-  }
-
-
-  internal Sprite GetChipSpriteForAmount(int amount, bool isPlayer)
-  {
-    List<int> roomChips = FindRoom();
-    if (roomChips == null || roomChips.Count == 0)
-      return isPlayer ? PlayerChipSprite[0] : otherChipSprite[0];
-
-    // Find the largest chip denomination that is <= amount
-    int selectedDenomination = roomChips[0]; // Start with smallest
-
-    foreach (int chipValue in roomChips)
-    {
-      if (amount >= chipValue)
-      {
-        selectedDenomination = chipValue;
-      }
-      else
-      {
-        break; // Since roomChips should be sorted ascending
-      }
-    }
-
-    // Find the index of this denomination
-    int index = roomChips.IndexOf(selectedDenomination);
-
-    // Return the appropriate sprite
-    return isPlayer ? PlayerChipSprite[index] : otherChipSprite[index];
-  }
-
-
-
   #endregion
 
 
   #region Manage Result and reset
-  void PlayWinAnimations()
+  void StopWinAnimations()
   {
-    foreach (var item in AllOptions)
-    {
-      item.winAnimation.StopAnimation();
-      // if (item.HighlightedBG.activeInHierarchy)
-      // {
-      //     // item.winAnimation.StartAnimation();
-      // }
-    }
-  }
-
-
-
-
-  private Chip SpawnChipFromPool()
-  {
-    Chip chip = GetChip();   // your pool code
-    chip.transform.SetParent(poolParent);
-    chip.transform.position = DealersPoint.transform.position;
-    return chip;
-  }
-
-  private void MoveChip(Chip chip, Transform target, bool returnToPool)
-  {
-    chip.transform.DOMove(target.position, 0.6f)
-        .SetEase(Ease.OutQuad)
-        .OnComplete(() =>
-        {
-          if (returnToPool)
-          {
-            ReturnChip(chip);
-          }
-        });
+    foreach (var option in betOptions) option.StopWin();
   }
 
   // Where a player's payout chips fly to; null means the caller falls back to the player-count label
@@ -1107,27 +673,6 @@ public class GameManager : MonoBehaviour
 
     return null;
   }
-
-
-
-
-  private void SpawnPayoutChips(float amount, Transform target)
-  {
-    if (amount <= 0) return;
-
-    Chip chip = SpawnChipFromPool();
-    MoveChip(chip, target, true);
-  }
-
-
-
-
-
-
-
-
-
-
   #endregion
 
 
@@ -1136,521 +681,100 @@ public class GameManager : MonoBehaviour
 
 
   #region  manage BEt Double bet cancle &&& undo
-  internal void RepeAtBet(List<Bet> bets)
+  internal void OnBetsRepeated(List<Bet> bets)
   {
-    // audioManager.PlayWLAudio("double");
-
-    List<int> roomChips = FindRoom(); // chip denominations
-
     foreach (var bet in bets)
     {
-
-      int amount = bet.amount;
-
-      // Break amount into multiple chips
-      List<int> chipPieces = BreakAmountIntoChips(amount, roomChips);
-
-      foreach (int piece in chipPieces)
-      {
-        ChipData data = new ChipData();
-        data.betId = bet.betId;
-        data.amount = piece;
-
-        string val = piece.ToString();
-        int index = findChipindex(piece, roomChips);
-
-        if (index <= 5)   // your existing condition
-        {
-          OptionPrefab opts = FindOption(bet.betOption);
-          data.chip = SpawnChip(
-              findChipSprite(piece, roomChips),
-              val,
-              index,
-              opts.PlayerbetPos.transform,
-              opts,
-
-              true
-          );
-
-          PlayerChips.Add(data);
-        }
-        UpdateMyBetOnOption(bet.betOption, piece);
-
-      }
-      uiManager.SetNetBetPanel(amount);
+      if (TryGetOption(bet.betOption, out BetOptionView option)) PlacePlayerBet(option, bet.amount);
     }
     uiManager.SetChipoption(true);
+    RefreshBetButtons();
   }
-  internal void DoubleBets(List<Bet> bets)
+
+  internal void OnBetsDoubled(List<DoubledBet> bets)
   {
-    // audioManager.PlayWLAudio("double");
-
-    List<int> roomChips = FindRoom(); // chip denominations
-
     foreach (var bet in bets)
     {
-      if (bet.delta > 0)
-      {
-        int amount = bet.oldAmount;
-
-        // Break amount into multiple chips
-        List<int> chipPieces = BreakAmountIntoChips(amount, roomChips);
-
-        foreach (int piece in chipPieces)
-        {
-          ChipData data = new ChipData();
-          data.betId = bet.betId;
-          data.amount = piece;
-
-          string val = piece.ToString();
-          int index = findChipindex(piece, roomChips);
-
-          if (index <= 5)   // your existing condition
-          {
-            OptionPrefab opts = FindOption(bet.betOption);
-            data.chip = SpawnChip(
-                findChipSprite(piece, roomChips),
-                val,
-                index,
-                opts.PlayerbetPos.transform,
-                opts,
-
-                true
-            );
-
-            PlayerChips.Add(data);
-          }
-          UpdateMyBetOnOption(bet.betOption, piece);
-        }
-        uiManager.SetNetBetPanel(amount);
-
-      }
+      if (bet.delta > 0 && TryGetOption(bet.betOption, out BetOptionView option)) PlacePlayerBet(option, bet.oldAmount);
     }
+    RefreshBetButtons();
+  }
+
+  internal void OnBetsCancelled()
+  {
+    foreach (var option in betOptions) option.ClearPlayerBet();
+    uiManager.SetNetBetPanel(0);
+    StopAutoIfNoBets();
+  }
+
+  internal void OnBetUndone(string betOption, int refundAmount)
+  {
+    if (TryGetOption(betOption, out BetOptionView option))
+    {
+      option.AddPlayerBet(-refundAmount);
+      RefreshPlayerChip(option);
+    }
+    uiManager.SetNetBetPanel(-refundAmount);
+    StopAutoIfNoBets();
+  }
+
+  // Taking every chip back leaves auto with nothing to repeat
+  void StopAutoIfNoBets()
+  {
+    if (!PlayerHasBets()) isAuto = false;
+    RefreshBetButtons();
   }
 
   internal void ClearAllBets()
   {
-    CancleBets();
-    foreach (var chips in OtherPlayerChips)
-    {
-      Chip c = chips.chip.GetComponent<Chip>();
-      if (chips != null)
-        ReturnChip(c);
-    }
-    OtherPlayerChips.Clear();
-    ResetAllBetUI();
+    chipManager.ReturnAllItemsToPool();
+    opponentBets.Clear();
+    ResetAllBetOptions();
     uiManager.SetNetBetPanel(0);
   }
-  internal void CancleBets()
-  {
-
-    ResetPlayerBetUI();
-
-    uiManager.SetNetBetPanel(0);
-
-
-    foreach (var chips in PlayerChips)
-    {
-      Chip c = chips.chip.GetComponent<Chip>();
-      if (chips != null)
-        ReturnChip(c);
-    }
-    PlayerChips.Clear();
-  }
-  internal void ResetPlayerBetUI()
-  {
-
-    foreach (var opt in AllOptions)
-    {
-      opt.ResetPlayerUI();
-    }
-  }
-
-  internal void UnduBets(string betId)
-  {
-    for (int i = PlayerChips.Count - 1; i >= 0; i--)
-    {
-      var item = PlayerChips[i];
-
-      if (item.betId == betId)
-      {
-        int amount = item.amount;
-        string option = socketManager.BetChipData.payload.betOption;
-
-        // 1. Return chip
-        if (item.chip != null)
-        {
-          Chip c = item.chip.GetComponent<Chip>();
-          ReturnChip(c);
-        }
-
-        // 2. Remove from list
-        PlayerChips.RemoveAt(i);
-
-        // 3. UPDATE UI
-        UpdateMyBetOnOption(option, -amount);
-        uiManager.SetNetBetPanel(-amount);
-
-        // 4. Refresh chip display ← ADD THIS LINE
-        FindOption(option)?.RefreshChipDisplay();
-      }
-    }
-  }
-  internal void UnduBets(string betId, string betOption, int refundAmount)
-  {
-    // Find and remove the chips with matching betId
-    for (int i = PlayerChips.Count - 1; i >= 0; i--)
-    {
-      var item = PlayerChips[i];
-
-      if (item.betId == betId)
-      {
-        // 1. Return chip to pool
-        if (item.chip != null)
-        {
-          Chip c = item.chip.GetComponent<Chip>();
-          ReturnChip(c);
-        }
-
-        // 2. Remove from list
-        PlayerChips.RemoveAt(i);
-      }
-    }
-
-    // 3. Update UI - use AddPlayerChip with negative amount to update both text AND chip display
-    OptionPrefab option = FindOption(betOption);
-    if (option != null)
-    {
-      option.AddPlayerChip(-refundAmount, null);
-    }
-
-    uiManager.SetNetBetPanel(-refundAmount);
-  }
-  // internal void UnduBets(int amount, string betOpt)
-  // {
-  //     OptionPrefab opt = FindOption(betOpt);
-  //     opt.AddPlayerChip(-amount, PlayerChipSprite[0]);
-  // }
   #endregion
-
-
-
-  #region chip Pool
-
-
-
-
-
-
-
-  GameObject AddChip()
-  {
-    var go = Instantiate(chipPrefab, poolParent);
-    go.SetActive(false);
-    pool.Add(go);
-    return go;
-  }
-
-  // internal Chip GetChip()
-  // {
-  //     // Try to reuse inactive chip
-  //     for (int i = 0; i < pool.Count; i++)
-  //     {
-  //         if (!pool[i].activeInHierarchy)
-  //         {
-  //             pool[i].SetActive(true);
-  //             return pool[i].GetComponent<Chip>();
-  //         }
-  //     }
-
-  //     // If all are in use, expand pool BEFORE returning
-  //     for (int i = 0; i < 10; i++)
-  //         AddChip();
-
-  //     // Guaranteed available now
-  //     pool[^1].SetActive(true);
-  //     return pool[^1].GetComponent<Chip>();
-  // }
-  int FreeChipCount()
-  {
-    int free = 0;
-    for (int i = 0; i < pool.Count; i++)
-      if (!pool[i].activeInHierarchy)
-        free++;
-
-    return free;
-  }
-  void EnsureFreeChips()
-  {
-    if (FreeChipCount() >= 5)
-      return;
-
-    int need = 5 - FreeChipCount();
-    int expandCount = Mathf.Max(need, 10);
-
-    for (int i = 0; i < expandCount; i++)
-      AddChip();
-  }
-  internal Chip GetChip()
-  {
-    // Make sure free chips exist BEFORE using
-    EnsureFreeChips();
-
-    for (int i = 0; i < pool.Count; i++)
-    {
-      if (!pool[i].activeInHierarchy)
-      {
-        pool[i].SetActive(true);
-        return pool[i].GetComponent<Chip>();
-      }
-    }
-
-    return null; // logically unreachable
-  }
-  internal void ReturnChip(Chip chip)
-  {
-    chip.gameObject.SetActive(false);
-    chip.transform.SetParent(poolParent);
-  }
-
-
-
-
-
-  #endregion
-
-
-
-
 
 
   #region helper
-  List<int> BreakAmountIntoChips(int amount, List<int> chipOptions)
-  {
-    // ✅ Make a COPY so original list is not modified
-    List<int> sortedChips = new List<int>(chipOptions);
-
-    // Sort descending
-    sortedChips.Sort((a, b) => b.CompareTo(a));
-
-    List<int> results = new List<int>();
-
-    foreach (int chip in sortedChips)
-    {
-      while (amount >= chip)
-      {
-        amount -= chip;
-        results.Add(chip);
-      }
-    }
-
-    return results;
-  }
-
-
   internal void UpdatePlayerbalance(string balance)
   {
-    uiManager.MainPlayers.playerBalence.text = "Rs" + balance;
+    uiManager.MainPlayers.playerBalence.text = balance;
   }
-  Sprite findChipSprite(int amount, List<int> betOptions)
+  List<int> CurrentRoomChips()
   {
-    for (int i = 0; i < betOptions.Count; i++)
+    var bets = socketManager.initialData.bets;
+    switch (currentRoom)
     {
-      if (betOptions[i] == amount)
-      {
-        return PlayerChipSprite[i];
-      }
-    }
-    return PlayerChipSprite[0];
-
-  }
-  Sprite findOtherPlayerChipSprite(int amount, List<int> betOptions)
-  {
-    for (int i = 0; i < betOptions.Count; i++)
-    {
-      if (betOptions[i] == amount)
-      {
-        return otherChipSprite[i];
-      }
-    }
-    return null;
-
-  }
-  int findChipindex(int amount, List<int> betOptions)
-  {
-    for (int i = 0; i < betOptions.Count; i++)
-    {
-      if (betOptions[i] == amount)
-      {
-        return i;
-      }
-    }
-    return 0;
-
-  }
-  internal List<int> FindRoom()
-  {
-    string room = currentRoom;
-    List<int> data = null;
-
-    switch (room)
-    {
-      case "level_1":
-        data = socketManager.initialData.bets.level_1;
-        break;
-
-      case "level_2":
-        data = socketManager.initialData.bets.level_2;
-        break;
-
-      case "level_3":
-        data = socketManager.initialData.bets.level_3;
-        break;
-
-      case "level_4":
-        data = socketManager.initialData.bets.level_4;
-        break;
-      case "level_5":
-        data = socketManager.initialData.bets.level_5;
-        break;
-      case "level_6":
-        data = socketManager.initialData.bets.level_6;
-        break;
-    }
-    return data;
-  }
-
-  internal OptionPrefab FindOption(string opt)
-  {
-    // Debug.Log("789 _____________" + opt);
-    switch (opt)
-    {
-      case "s_2":
-        return AllOptions[3];
-
-      case "s_3":
-        return AllOptions[4];
-
-      case "s_4":
-        return AllOptions[5];
-
-      case "s_5":
-        return AllOptions[6];
-
-      case "s_6":
-        return AllOptions[7];
-
-      case "s_8":
-        return AllOptions[8];
-
-      case "s_9":
-        return AllOptions[9];
-
-      case "s_10":
-        return AllOptions[10];
-
-      case "s_11":
-        return AllOptions[11];
-
-      case "s_12":
-        return AllOptions[12];
-
-      case "number_8_12":
-        return AllOptions[0];
-
-      case "number_7":
-        return AllOptions[1];
-
-      case "number_2_6":
-        return AllOptions[2];
-
-      default:
-        return AllOptions[0];
-
+      case "level_1": return bets.level_1;
+      case "level_2": return bets.level_2;
+      case "level_3": return bets.level_3;
+      case "level_4": return bets.level_4;
+      case "level_5": return bets.level_5;
+      case "level_6": return bets.level_6;
+      default: return null;
     }
   }
 
-  internal void PlayPopup(string popupText)
+  bool TryGetOption(string betKey, out BetOptionView option)
   {
-    // BlockerText.text = popupText;
+    if (betKey != null && betOptionsByKey.TryGetValue(betKey, out option)) return true;
 
-    // if (animRoutine != null)
-    //     StopCoroutine(animRoutine);
-
-    // animRoutine = StartCoroutine(PopupRoutine());
+    option = null;
+    Debug.LogWarning("[BET] unknown bet option: " + betKey);
+    return false;
   }
+
+  void RefreshPlayerChip(BetOptionView option) =>
+    option.ShowPlayerChip(chipManager.GetSprite(option.PlayerBet, true));
+
+  void RefreshOpponentChip(BetOptionView option) =>
+    option.ShowOpponentChip(chipManager.GetSprite(option.OpponentBet, false));
+
   internal void playtheCoin(string winamount)
   {
-
-    // Kill previous animation if running
-    coinTween?.Kill();
-
     PlayerWinAnimation.gameObject.SetActive(true);
     PlayerWinAnimation.StopAnimation();
     PlayerWinAnimation.StartAnimation();
-  }
-
-  private IEnumerator PopupRoutine()
-  {
-    BlockerObj.transform.position = popStart.position;
-    yield return Move(BlockerObj.transform, popCenter.position, moveDuration);
-
-    yield return new WaitForSeconds(holdDuration);
-
-    yield return Move(BlockerObj.transform, popEnd.position, moveDuration);
-  }
-
-  private IEnumerator Move(Transform target, Vector3 toPos, float duration)
-  {
-    Vector3 fromPos = target.position;
-    float t = 0f;
-
-    while (t < duration)
-    {
-      t += UnityEngine.Time.deltaTime;
-      float lerp = t / duration;
-      target.position = Vector3.Lerp(fromPos, toPos, lerp);
-      yield return null;
-    }
-
-    target.position = toPos;
-  }
-
-  internal void UpdateMyBetOnOption(string opt, int amount)
-  {
-    OptionPrefab option = FindOption(opt);
-    if (option == null) return;
-
-    option.MyBetObj.SetActive(true);
-
-    int prev = 0;
-    int.TryParse(option.MyBetText.text, out prev);
-
-    int newAmount = prev + amount;
-    if (newAmount <= 0) option.MyBetObj.SetActive(false);
-    option.MyBetText.text = newAmount.ToString();
-  }
-
-
-  internal void ResetBetUI(OptionPrefab option)
-  {
-    if (option == null) return;
-
-    // Hide My Bet
-    option.MyBetObj.SetActive(false);
-    option.MyBetText.text = "0";
-
-
-  }
-  internal void ResetAllBetUI()
-  {
-
-
-    foreach (var opt in AllOptions)
-    {
-      opt.ResetOptionUI();
-    }
-
   }
 
 
@@ -1659,13 +783,15 @@ public class GameManager : MonoBehaviour
   {
 
   }
+  
   internal void ManageBonus(int amount, string option)
   {
-    Transform spawnPos = FindOption(option).gameObject.transform;
+    if (!TryGetOption(option, out BetOptionView betOption)) return;
     GameObject obj = Instantiate(ExtarPayObject, Bonusparent.transform);
-    obj.transform.position = spawnPos.position;
+    obj.transform.position = betOption.transform.position;
     obj.GetComponent<BonusPrefab>().SetNumberWithX(amount);
   }
+
   public void ResetBonusUI()
   {
     LeaderboadrdShow.Clear();
@@ -1677,15 +803,4 @@ public class GameManager : MonoBehaviour
       Destroy(parent.GetChild(i).gameObject);
     }
   }
-}
-
-[System.Serializable]
-public class ChipData
-{
-  public string betId;
-  public string username;
-  public int amount;
-
-  public OptionPrefab betOptionK;
-  public GameObject chip;
 }
