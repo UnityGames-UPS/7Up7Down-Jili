@@ -17,8 +17,9 @@ Two dice are rolled each round. Bets are placed during a countdown, then locked.
   Classic odds are 1:1 / 4:1 / 1:1, but **payouts are always read from the server**
   (`GameData.wagers.*.payout`), never hardcoded.
 - **Side bets** (`side_bets`): exact total — `s_2`…`s_6`, `s_8`…`s_12` (no `s_7`; that is `number_7`).
-- **Bonus**: the server may broadcast per-option multipliers before a round (`game:bonus`), rendered
-  as floating "xN" badges by `GameManager.ManageBonus`.
+- **Bonus**: the server may broadcast per-option multipliers (`game:bonus`) once betting closes.
+  `GameManager.OnBonus` holds them until the Extra Pay banner reveals them as pooled "xN" badges
+  (`BonusManager`).
 - **Levels / rooms**: `level_1`…`level_6`, each with its own chip denominations and max bet limits.
 - **Modes**: multiplayer (shared table, other players' chips shown) and single player, plus
   Repeat / Auto-repeat betting.
@@ -70,7 +71,8 @@ Everything hangs off a handful of scene singletons wired to each other via `[Ser
 SocketIOManager  (Assets/Scripts/APIs/SocketIOManager.cs)   — transport + all DTOs
    ├── GameManager (Assets/Scripts/Functionality/GameManager.cs) — round flow, bets, chips, payouts
    │      ├── BetOptionView (Assets/Scripts/Prefab/BetOptionView.cs) — one per bet spot; no manager refs, raises `Clicked`
-   │      └── ChipManager (Assets/Scripts/Functionality/ChipManager.cs) — chip pool (`GenericObjectPool<Chip>`), sprites, all chip animation tuning
+   │      ├── ChipManager (Assets/Scripts/Functionality/ChipManager.cs) — chip pool (`GenericObjectPool<Chip>`), sprites, all chip animation tuning
+   │      └── BonusManager (Assets/Scripts/Functionality/BonusManager.cs) — bonus badge pool (`GenericObjectPool<BonusPrefab>`) and reveal tuning
    ├── UiManager   (Assets/Scripts/UI/UIManager.cs)          — popups, menus, stats road map, history
    ├── StartupPage (Assets/Scripts/Functionality/StartupPage.cs)— one-way splash/loading shown over the running game
    ├── AudioManager, DiceResultmanager, ImageAnimation, OrientationChange
@@ -124,11 +126,15 @@ Where the client currently differs from the spec (verify before relying on eithe
 2. `JOIN_LEVEL` ack → `OnRoomEnter` → `SetCoinData()` (chip denominations for that level),
    rule panel, leaderboards, and lets `StartupPage` finish loading. Rounds run muted behind the
    startup page until it is dismissed (Continue, or automatically if "don't show again" is saved).
-3. `game:round_start` → `GameManager.OnGameLoopStart()` clears chips, resets option UI,
-   fires "please bet now", auto-repeats if `isAuto`.
-4. `game:betting_timer` → `SetBetTimer()` drives the circular timer; at 0 it enables `BetBlocker`
-   and dims every option the player has no bet on.
-5. `game:dice_result` → `ManageResult()` runs the dice animation, then `ManageAfterResult()`
+3. `game:round_start` → `GameManager.OnGameLoopStart()` clears chips and bonus badges, resets
+   option UI, fires "please bet now", auto-repeats if `isAuto`.
+4. `game:round_start` and every `game:betting_timer` → `SyncBetTimer()`. The countdown runs locally
+   in `Update()` from `bettingEndTime - serverTime`; ticks only pull the deadline earlier. At 0
+   (`betLockLead` before the server's end) `LockBetting()` enables `BetBlocker`, dims every option
+   the player has no bet on and plays the Bet Locked banner.
+   `game:bonus` → `OnBonus()` → Extra Pay banner after Bet Locked, badges revealed at
+   `extraPayRevealAt`. `PlayRoundBanner` owns the three banners and the dim behind them.
+5. `game:dice_result` → `ManageResult()` hides the banners, runs the dice animation, then `ManageAfterResult()`
    highlights the winning option(s) and pushes the result into the stats road map.
 6. `game:cashout` → `ManagePayouts()` → chips animate from options to winners, balances update,
    leaderboards refresh, net-bet panel resets.

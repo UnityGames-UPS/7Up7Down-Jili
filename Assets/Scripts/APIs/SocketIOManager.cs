@@ -20,29 +20,21 @@ public class SocketIOManager : MonoBehaviour
   internal JoinLevelPayload roomData;
   internal GameData initialData = null;
   internal Player playerdata = null;
-
   internal bool isResultdone = false;
+
   // protected string nameSpace="game"; //BackendChanges
   protected string nameSpace = "playground-multiplayer"; //BackendChanges
   private Socket gameSocket; //BackendChanges
-
-
   private SocketManager manager;
-
-
   protected string SocketURI = null;
   protected string TestSocketURI = "https://devrealtime.dingdinghouse.com/";
   // protected string TestSocketURI = "http://localhost:5000/";
   private string savedToken;
 
   [SerializeField] internal JSFunctCalls JSManager;
-  [SerializeField]
-  private string testToken;
-
+  [SerializeField] private string testToken;
   internal bool isLoaded = false;
-
   internal bool SetInit = false;
-
   private bool isConnected = false; //Back2 Start
   private bool hasEverConnected = false;
 
@@ -240,7 +232,7 @@ public class SocketIOManager : MonoBehaviour
     gameManager.OnGameLoaded();
     LogEvent(logs.timer, "[game:betting_timer]", data);
     var timer = JsonUtility.FromJson<BettingTimerEvent>(data);
-    gameManager.SetBetTimer(timer.timeRemaining);
+    gameManager.SyncBetTimer(timer.roundId, timer.serverTime, timer.bettingEndTime);
   }
   private void OnDiceResult(string data)
   {
@@ -253,10 +245,8 @@ public class SocketIOManager : MonoBehaviour
   {
     LogEvent(logs.round, "[game:bonus]", data);
     var bonusEvent = JsonConvert.DeserializeObject<BonusEvent>(data);
-    foreach (var b in bonusEvent.bonus)
-    {
-      gameManager.ManageBonus(b.Value, b.Key);
-    }
+    if (bonusEvent?.bonus == null || bonusEvent.bonus.Count == 0) return;
+    gameManager.OnBonus(bonusEvent.bonus);
   }
   private void OnSocketState(bool state)
   {
@@ -689,6 +679,8 @@ public class SocketIOManager : MonoBehaviour
     NormalStart = true;
     LogEvent(logs.round, "[game:round_start]", json);
     gameManager.OnGameLoopStart();
+    var round = JsonUtility.FromJson<RoundStartEvent>(json);
+    gameManager.SyncBetTimer(round.roundId, round.serverTime, round.bettingEndTime);
   }
 
   void OnCashout(string data)

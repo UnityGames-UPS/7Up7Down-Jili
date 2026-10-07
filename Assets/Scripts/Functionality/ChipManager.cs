@@ -25,6 +25,9 @@ public class ChipManager : GenericObjectPool<Chip>
   [Header("Payout Animation")]
   [SerializeField] private float dealerPayDuration = 1f;
   [SerializeField] private float collectDuration = 0.6f;
+  [SerializeField] private float loseShrinkDuration = 0.3f;
+
+  internal float LoseShrinkDuration => loseShrinkDuration;
 
   private List<int> denominations = new List<int>();
 
@@ -72,23 +75,17 @@ public class ChipManager : GenericObjectPool<Chip>
     PlaceChips(reference, amount, false, opponentFlyDuration, onLanded);
   }
 
-  internal void PayFromDealer(ChipReference reference, int amount, bool isPlayer, Action<int> onChipLanded)
+  // Payouts travel as one chip carrying the whole amount
+  internal void PayFromDealer(ChipReference reference, int amount, bool isPlayer, Action onLanded)
   {
-    foreach (int chipAmount in BreakIntoChips(amount))
-    {
-      int landedAmount = chipAmount;
-      Chip chip = Spawn(chipAmount, isPlayer, reference, dealerPoint.position);
-      MoveAndReturn(chip, reference.Rect.position, dealerPayDuration, Ease.InQuad, () => onChipLanded?.Invoke(landedAmount));
-    }
+    Chip chip = Spawn(amount, isPlayer, reference, dealerPoint.position);
+    MoveAndReturn(chip, reference.Rect.position, dealerPayDuration, Ease.InQuad, onLanded);
   }
 
-  internal void CollectToPlayer(ChipReference reference, Vector3 target, int amount, bool isPlayer)
+  internal void CollectToPlayer(ChipReference reference, Vector3 target, int amount, bool isPlayer, Action onArrived = null)
   {
-    foreach (int chipAmount in BreakIntoChips(amount))
-    {
-      Chip chip = Spawn(chipAmount, isPlayer, reference, reference.Rect.position);
-      MoveAndReturn(chip, target, collectDuration, Ease.OutQuad, null);
-    }
+    Chip chip = Spawn(amount, isPlayer, reference, reference.Rect.position);
+    MoveAndReturn(chip, target, collectDuration, Ease.OutQuad, onArrived);
   }
 
   internal override void ReturnToPool(Chip chip)

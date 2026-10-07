@@ -286,7 +286,6 @@ public class UiManager : MonoBehaviour
   [SerializeField] internal Button AutoBtn;
   [SerializeField] internal Button StopAutoBtn;
   [SerializeField] internal Button StartBtn;
-  [SerializeField] internal GameObject NetBetPanel;
   [SerializeField] internal TMP_Text NetBet;
   [Header("player data")]
   [SerializeField] internal PlayerData MainPlayers;
@@ -1393,11 +1392,11 @@ public class UiManager : MonoBehaviour
     Repeatbtn.interactable = canRepeat;
   }
 
-  internal void OnClickLeaderboardIcon(int index)
-  {
-    WinnerPlayers[index].purpleCircle.gameObject.SetActive(true);
-    gameManager.LeaderboadrdShow.Add(index);
-  }
+  // internal void OnClickLeaderboardIcon(int index)
+  // {
+  //   WinnerPlayers[index].purpleCircle.gameObject.SetActive(true);
+  //   gameManager.LeaderboadrdShow.Add(index);
+  // }
 
 
 }

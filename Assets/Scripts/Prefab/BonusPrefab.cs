@@ -1,47 +1,135 @@
-using System.Collections.Generic;
-using System.Xml.Serialization;
+using System;
+using System.Text;
+using DG.Tweening;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class BonusPrefab : MonoBehaviour
 {
-  [SerializeField] private List<Sprite> NumbersSprites;
-  [SerializeField] private GameObject NumbersParent;
+  // index of the 'X' in the text's sprite asset; digits are 0-9
+  private const int XSpriteIndex = 10;
+
+  // Each animation is its own child object; only one is active at a time
   [SerializeField] private ImageAnimation BgAnimation;
-  [SerializeField] private List<Image> Numbers;
+  [SerializeField] private ImageAnimation GlowAnimation;
+  [SerializeField] private ImageAnimation RotationAnimation;
+  [SerializeField] private TMP_Text MultiplierText;
 
-  public void SetNumberWithX(int value)
+  private readonly StringBuilder spriteTags = new StringBuilder();
+  private CanvasGroup group;
+
+  CanvasGroup Group
   {
-    BgAnimation.StartAnimation();
-    // Convert number to string
-    string numberStr = value.ToString();
-
-    int totalLength = numberStr.Length + 1; // +1 for 'X'
-
-    // Safety check
-    if (totalLength > Numbers.Count)
+    get
     {
-      Debug.LogWarning("Not enough UI slots for number display!");
+      if (!group) group = GetComponent<CanvasGroup>();
+      if (!group) group = gameObject.AddComponent<CanvasGroup>();
+      return group;
+    }
+  }
+
+  // Invisible while it waits for its turn in a staggered reveal
+  internal void Hide() => Group.alpha = 0f;
+
+  internal void Show(int multiplier, BonusAnimationSettings settings)
+  {
+    ShowOnly(BgAnimation);
+    BgAnimation.Play();
+
+    spriteTags.Clear();
+    foreach (char digit in multiplier.ToString()) AppendSprite(digit - '0');
+    AppendSprite(XSpriteIndex);
+
+    MultiplierText.text = spriteTags.ToString();
+
+    Group.DOFade(1f, settings.fadeInDuration).SetTarget(this);
+    MultiplierText.rectTransform.localScale = Vector3.zero;
+    MultiplierText.rectTransform.DOScale(1f, settings.textPopDuration).SetEase(settings.textPopEase).SetTarget(this);
+  }
+
+  // Glow loops, then the rotation; onDone fires after the rotation's last frame
+  internal void PlayWin(BonusAnimationSettings settings, Action onDone)
+  {
+    FinishReveal();
+
+    if (!GlowAnimation || settings.glowLoops <= 0)
+    {
+      PlayRotation(settings, onDone);
       return;
     }
 
-    // Disable all first
-    for (int i = 0; i < Numbers.Count; i++)
+    ShowOnly(GlowAnimation);
+    int played = 0;
+    Action onLoop = null;
+    onLoop = () =>
     {
-      Numbers[i].gameObject.SetActive(false);
+      if (++played < settings.glowLoops) GlowAnimation.Play(onLoop);
+      else PlayRotation(settings, onDone);
+    };
+    GlowAnimation.Play(onLoop);
+  }
+
+  internal void Dismiss(BonusAnimationSettings settings, Action onDone)
+  {
+    FinishReveal();
+    transform.DOScale(0f, settings.loseShrinkDuration).SetEase(Ease.InBack).SetTarget(this)
+      .OnComplete(() => onDone?.Invoke());
+  }
+
+  internal void ResetState()
+  {
+    DOTween.Kill(this);
+    foreach (var animation in new[] { BgAnimation, GlowAnimation, RotationAnimation })
+    {
+      if (animation) animation.StopAnimation();
+    }
+    MultiplierText.rectTransform.localScale = Vector3.one;
+    MultiplierText.rectTransform.localRotation = Quaternion.identity;
+    Group.alpha = 1f;
+  }
+
+  void PlayRotation(BonusAnimationSettings settings, Action onDone)
+  {
+    if (!RotationAnimation)
+    {
+      onDone?.Invoke();
+      return;
     }
 
-    // Set number digits
-    for (int i = 0; i < numberStr.Length; i++)
+    ShowOnly(RotationAnimation);
+    RectTransform text = MultiplierText.rectTransform;
+    bool shrinking = false;
+
+    // Driven by sprite frames, not time, so the text stays locked to the coin
+    RotationAnimation.Play(frame =>
     {
-      int digit = numberStr[i] - '0';
+      float turned = Mathf.InverseLerp(settings.rotationStartFrame, settings.rotationEndFrame, frame);
+      text.localEulerAngles = settings.textRotation * turned;
 
-      Numbers[i].sprite = NumbersSprites[digit];
-      Numbers[i].gameObject.SetActive(true);
+      // 0 means the frame has not been set yet
+      if (shrinking || settings.scaleDownStartFrame <= 0 || frame < settings.scaleDownStartFrame) return;
+      shrinking = true;
+      text.DOScale(0f, settings.textScaleDownDuration).SetEase(Ease.Linear).SetTarget(this);
+    }, onDone);
+  }
+
+  void FinishReveal()
+  {
+    DOTween.Kill(this);
+    Group.alpha = 1f;
+    MultiplierText.rectTransform.localScale = Vector3.one;
+  }
+
+  void ShowOnly(ImageAnimation shown)
+  {
+    foreach (var animation in new[] { BgAnimation, GlowAnimation, RotationAnimation })
+    {
+      if (animation) animation.gameObject.SetActive(animation == shown);
     }
+  }
 
-    // Set 'X' at the end
-    Numbers[numberStr.Length].sprite = NumbersSprites[10];
-    Numbers[numberStr.Length].gameObject.SetActive(true);
+  void AppendSprite(int index)
+  {
+    spriteTags.Append("<sprite=").Append(index).Append('>');
   }
 }

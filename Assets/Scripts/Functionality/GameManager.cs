@@ -37,6 +37,8 @@ public class GameManager : MonoBehaviour
   [Header("Jili")]
   [SerializeField] private TMP_Text Timer_text;
   [SerializeField] private Image CircleTimerFill;
+  // Betting locks this many seconds before the server's bettingEndTime
+  [SerializeField] private float betLockLead = 0.5f;
 
   [Header("Chip")]
   [SerializeField] private ChipManager chipManager;
@@ -47,7 +49,7 @@ public class GameManager : MonoBehaviour
   [SerializeField] private GameObject BetBlocker;
   [SerializeField] private MessagePopup messagePopup;
   private bool bettingClosed;
-  // Player had chips down when betting last closed: offers Auto now and Again next round
+  // Player had chips down when betting last closed: offers Again next round
   private bool hadBetsAtClose;
   // Again was pressed and its reply has not arrived yet
   private bool repeatPending;
@@ -62,17 +64,34 @@ public class GameManager : MonoBehaviour
   [SerializeField] private ImageAnimation Extrapay;
   [SerializeField] private ImageAnimation Betlocked;
   [SerializeField] private ImageAnimation Plesebetnow;
-  // Parent of the two banners above; kept click-through so they never cover the bet views
+  // Parent of the three banners above; kept click-through so they never cover the bet views
   [SerializeField] private CanvasGroup roundBannerGroup;
-  [SerializeField] internal List<int> LeaderboadrdShow = new List<int>();
+  // Dims the table behind a banner; the alpha set in the scene is the dimmed alpha
+  [SerializeField] private Image roundBannerDim;
+  [SerializeField] private float bannerDimFade = 0.15f;
+  // How far through the Extra Pay banner the multipliers appear
+  [Range(0f, 1f)] [SerializeField] private float extraPayRevealAt = 0.7f;
+  // [SerializeField] internal List<int> LeaderboadrdShow = new List<int>();
   // Off while the scene has no leaderboard UI; data is still received and logged
   [SerializeField] internal bool showLeaderboard = false;
 
+  [Header("Win Animation")]
+  // Above the table UI; each winning option's win layer is moved here while it plays
+  [SerializeField] private Transform winAnimLayer;
+  [SerializeField] private WinAnimationSettings winSettings = new WinAnimationSettings();
+
+  [Header("Profit Text")]
+  // Floats up from where it sits in the scene when the player's winnings reach the avatar
+  [SerializeField] private TMP_Text profitText;
+  [SerializeField] private ProfitTextSettings profitSettings = new ProfitTextSettings();
+  private Vector2 profitTextHome;
+
   [Header("Extra Pay ")]
-  [SerializeField] private GameObject ExtarPayObject;
-  [SerializeField] private GameObject Bonusparent;
-  public float popScale = 1.15f;
-  public float animTime = 0.15f;
+  [SerializeField] private BonusManager bonusManager;
+  // Received from game:bonus, waiting for the Extra Pay banner to reveal it
+  private Dictionary<string, int> pendingBonus;
+  private ImageAnimation activeBanner;
+  private float bannerDimAlpha;
 
   internal int BetCounter;
   internal int MultiplierCounter;
@@ -88,6 +107,8 @@ public class GameManager : MonoBehaviour
 
   private readonly List<(string betId, string username, BetOptionView option)> opponentBets =
     new List<(string betId, string username, BetOptionView option)>();
+  // This round's winning options, known once the dice have landed
+  private readonly List<BetOptionView> winningOptions = new List<BetOptionView>();
 
 
   void Awake()
@@ -95,6 +116,13 @@ public class GameManager : MonoBehaviour
     foreach (var option in betOptions) option.Clicked += OnBetOptionClicked;
     BetBlocker.SetActive(false);
     if (roundBannerGroup) roundBannerGroup.blocksRaycasts = false;
+    if (roundBannerDim) bannerDimAlpha = roundBannerDim.color.a;
+    HideRoundBanners();
+    if (profitText)
+    {
+      profitTextHome = profitText.rectTransform.anchoredPosition;
+      profitText.gameObject.SetActive(false);
+    }
   }
   private void Start()
   {
@@ -294,8 +322,8 @@ public class GameManager : MonoBehaviour
     bool hasBets = PlayerHasBets();
     uiManager.SetBetActionButtons(!bettingClosed && hasBets);
 
-    // Auto takes over from Again as soon as the player has chips down
-    bool offerAuto = hasBets || (bettingClosed && hadBetsAtClose);
+    // Auto takes over from Again only while the player has chips down
+    bool offerAuto = hasBets;
     bool canRepeat = !bettingClosed && hadBetsAtClose && !repeatPending;
     uiManager.SetRepeatSlot(isAuto, offerAuto, canRepeat);
   }
@@ -320,34 +348,148 @@ public class GameManager : MonoBehaviour
     RefreshBetButtons();
   }
 
-  internal void SetBetTimer(int timeRemaining)
+  private string timerRoundId;
+  private bool timerRunning;
+  // Time.realtimeSinceStartup at which betting locks
+  private float betDeadline;
+  private float betDuration;
+  private int shownSeconds;
+
+  // The countdown runs locally; round_start and every timer tick only correct it
+  internal void SyncBetTimer(string roundId, long serverTime, long bettingEndTime)
   {
+    float now = Time.realtimeSinceStartup;
+    float deadline = now + (bettingEndTime - serverTime) / 1000f - betLockLead;
+
+    if (roundId == timerRoundId)
+    {
+      // A delayed packet can only overstate the time left, so the earliest deadline is the truest
+      betDeadline = Mathf.Min(betDeadline, deadline);
+      return;
+    }
+
+    timerRoundId = roundId;
+    betDeadline = deadline;
+    // Full length even when joining mid-round, so the ring starts part-drained
+    float fullDuration = socketManager.initialData != null ? socketManager.initialData.roundInterval / 1000f - betLockLead : 0f;
+    betDuration = Mathf.Max(fullDuration, deadline - now, 0.01f);
+    shownSeconds = -1;
+    timerRunning = true;
+
     SetBettingClosed(false);
     foreach (var option in betOptions) option.SetDimmed(false);
-
-    int time = timeRemaining - 1;
-    StartBetTimer(time);
-
-    if (time == 5)
-    {
-      audioManager.PlayGirlAudio("timeisrunning");
-    }
-    else if (time == 0)
-    {
-      audioManager.PlayGirlAudio("nomorebets");
-
-      SetBettingClosed(true);
-      foreach (var option in betOptions) option.SetDimmed(!option.HasPlayerBet);
-      PlayRoundBanner(Betlocked);
-    }
+    CircleTimerFill.transform.parent.gameObject.SetActive(true);
   }
 
-  void PlayRoundBanner(ImageAnimation banner)
+  void Update()
   {
-    if (roundBannerGroup) roundBannerGroup.blocksRaycasts = false;
-    banner.StopAnimation();
+    if (!timerRunning) return;
+
+    float remaining = Mathf.Max(0f, betDeadline - Time.realtimeSinceStartup);
+    CircleTimerFill.fillAmount = remaining / betDuration;
+
+    int seconds = Mathf.CeilToInt(remaining);
+    if (seconds == shownSeconds) return;
+    shownSeconds = seconds;
+    Timer_text.text = seconds.ToString();
+
+    if (seconds == 5) audioManager.PlayGirlAudio("timeisrunning");
+    else if (seconds == 0) LockBetting();
+  }
+
+  void LockBetting()
+  {
+    timerRunning = false;
+    audioManager.PlayGirlAudio("nomorebets");
+    SetBettingClosed(true);
+    foreach (var option in betOptions) option.SetDimmed(!option.HasPlayerBet);
+    PlayRoundBanner(Betlocked, TryPlayExtraPay);
+  }
+
+  internal void ResetTimer()
+  {
+    timerRunning = false;
+    timerRoundId = null;
+    CircleTimerFill.fillAmount = 1f;
+  }
+
+  // One banner at a time; the dim stays up when onDone chains straight into the next banner
+  void PlayRoundBanner(ImageAnimation banner, System.Action onDone = null, float markAt = 1f, System.Action onMark = null)
+  {
+    foreach (var other in new[] { Plesebetnow, Betlocked, Extrapay })
+    {
+      if (other != banner) other.gameObject.SetActive(false);
+    }
+
+    ShowBannerDim(true);
+    activeBanner = banner;
     banner.gameObject.SetActive(true);
-    banner.StartAnimation();
+    banner.Play(markAt, onMark, () =>
+    {
+      banner.gameObject.SetActive(false);
+      activeBanner = null;
+      onDone?.Invoke();
+      if (activeBanner == null) ShowBannerDim(false);
+    });
+  }
+
+  void HideRoundBanners()
+  {
+    Plesebetnow.gameObject.SetActive(false);
+    Betlocked.gameObject.SetActive(false);
+    Extrapay.gameObject.SetActive(false);
+    activeBanner = null;
+
+    if (!roundBannerDim) return;
+    roundBannerDim.DOKill();
+    SetBannerDimAlpha(0f);
+    roundBannerDim.gameObject.SetActive(false);
+  }
+
+  void ShowBannerDim(bool show)
+  {
+    if (!roundBannerDim) return;
+
+    roundBannerDim.DOKill();
+    if (show) roundBannerDim.gameObject.SetActive(true);
+    roundBannerDim.DOFade(show ? bannerDimAlpha : 0f, bannerDimFade).OnComplete(() =>
+    {
+      if (!show) roundBannerDim.gameObject.SetActive(false);
+    });
+  }
+
+  void SetBannerDimAlpha(float alpha)
+  {
+    Color color = roundBannerDim.color;
+    color.a = alpha;
+    roundBannerDim.color = color;
+  }
+
+  internal void OnBonus(Dictionary<string, int> bonus)
+  {
+    pendingBonus = bonus;
+    TryPlayExtraPay();
+  }
+
+  // Extra Pay follows Bet Locked, whichever of "banner finished" and "bonus arrived" comes last
+  void TryPlayExtraPay()
+  {
+    if (pendingBonus == null || !bettingClosed) return;
+    if (activeBanner == Betlocked || activeBanner == Extrapay) return;
+    PlayRoundBanner(Extrapay, null, extraPayRevealAt, RevealBonus);
+  }
+
+  void RevealBonus()
+  {
+    if (pendingBonus == null) return;
+
+    int order = 0;
+    foreach (var bonus in pendingBonus)
+    {
+      if (bonusManager && TryGetOption(bonus.Key, out BetOptionView option))
+        bonusManager.Show(option.BonusAnchor, bonus.Value, order++, option.BetType == "main_bets");
+    }
+    pendingBonus = null;
   }
 
   internal void OnGameLoopStart()
@@ -362,44 +504,19 @@ public class GameManager : MonoBehaviour
     PlayRoundBanner(Plesebetnow);
 
     if (isAuto) RequestRepeat();
-    ResetBonusUI();
-  }
-  private Tween timerTween;
-  private int maxBetTime = -1;
-  private int lastTime = int.MaxValue;
-  public void StartBetTimer(int time)
-  {
-    ResetBonusUI();
-    CircleTimerFill.gameObject.transform.parent.gameObject.SetActive(true);
-    // First packet decides max timer
-    if (maxBetTime == -1)
-      maxBetTime = time;
 
-    Timer_text.text = time.ToString();
-    // Ignore if server sends a bigger time later
-    if (time > lastTime)
-      return;
-
-    lastTime = time;
-
-    float targetFill = (float)time / maxBetTime;
-
-    // Stop previous animation
-    timerTween?.Kill();
-    // Smooth animation
-    timerTween = CircleTimerFill
-        .DOFillAmount(targetFill, 1f)
-        .SetEase(Ease.Linear);
+    winningOptions.Clear();
+    StopWinAnimations();
+    pendingBonus = null;
+    if (bonusManager) bonusManager.ReturnAllItemsToPool();
+    // LeaderboadrdShow.Clear();
   }
 
-  internal void ResetTimer()
-  {
-    maxBetTime = -1;
-    lastTime = int.MaxValue;
-    CircleTimerFill.fillAmount = 1f;
-  }
   internal void ManageResult(DiceResultEvent diceResult)
   {
+    // Dice must not be covered, and a bonus the banner had no time to reveal still has to show
+    HideRoundBanners();
+    RevealBonus();
     uiManager.HideBetLimitPanel();
     audioManager.PlayWLAudio("shakingDice");
     DiceAnimator.StartAnimation(FirstDiceSprite[diceResult.dice1 - 1], SecondDiceSprite[diceResult.dice2 - 1]);
@@ -435,8 +552,8 @@ public class GameManager : MonoBehaviour
 
   void ShowWin(BetOptionView option)
   {
+    winningOptions.Add(option);
     option.SetDimmed(false);
-    if (option.HasPlayerBet) option.PlayWin();
   }
 
   internal void ManagePayouts(CashoutEvent cashout)
@@ -445,17 +562,28 @@ public class GameManager : MonoBehaviour
   }
   IEnumerator ManagePayout(CashoutEvent cashout)
   {
-    foreach (var option in betOptions) option.SetDimmed(true);
+    // Read now: losing options clear their bets while they shrink
+    int staked = betOptions.Sum(o => o.PlayerBet);
+    double balanceBefore = socketManager.playerdata.balance;
 
-    yield return new WaitForSeconds(2f);
+    // Winners stay lit so the dealer's chips land on a bright spot
+    foreach (var option in betOptions)
+    {
+      bool lost = !winningOptions.Contains(option);
+      option.SetDimmed(lost);
+      if (lost) option.ShrinkBets(chipManager.LoseShrinkDuration, RefreshBetButtons);
+      if (bonusManager) bonusManager.Resolve(option.BonusAnchor, !lost);
+    }
+
     ManagePayments(cashout.payouts);
     yield return new WaitForSeconds(2f);
-    DistributePayouts(cashout.payouts);
+    DistributePayouts(cashout.payouts, staked, balanceBefore);
     foreach (var option in betOptions)
     {
       option.ClearAllBets();
       option.SetDimmed(false);
     }
+    RefreshBetButtons();
     SetOtherplayerData(cashout.leaderboards);
     uiManager.SetNetBetPanel(0);
     yield return new WaitForSeconds(2f);
@@ -490,26 +618,24 @@ public class GameManager : MonoBehaviour
   // Dealer pays winnings onto the option before they are collected by the winners
   void PayOntoOption(string betKey, int amount, bool isPlayer)
   {
-    if (!TryGetOption(betKey, out BetOptionView option)) return;
+    if (amount <= 0 || !TryGetOption(betKey, out BetOptionView option)) return;
 
+    // betWins excludes the stake, so the landed chip is stake + win
     if (isPlayer)
     {
-      chipManager.PayFromDealer(option.PlayerReferenceChip, amount, true, chipAmount =>
-      {
-        option.AddPlayerBet(chipAmount);
-        RefreshPlayerChip(option);
-      });
+      int total = option.PlayerBet + amount;
+      option.PlayWin(winAnimLayer, winSettings);
+      chipManager.PayFromDealer(option.PlayerReferenceChip, amount, true,
+        () => option.ShowPlayerWin(total, chipManager.GetSprite(total, true)));
     }
     else
     {
-      chipManager.PayFromDealer(option.OpponentReferenceChip, amount, false, chipAmount =>
-      {
-        option.AddOpponentBet(chipAmount);
-        RefreshOpponentChip(option);
-      });
+      int total = option.OpponentBet + amount;
+      chipManager.PayFromDealer(option.OpponentReferenceChip, amount, false,
+        () => option.ShowOpponentWin(total, chipManager.GetSprite(total, false)));
     }
   }
-  public void DistributePayouts(List<Payout> payouts)
+  void DistributePayouts(List<Payout> payouts, int staked, double balanceBefore)
   {
     string currentPlayer = uiManager.MainPlayers.playername.text;
 
@@ -522,24 +648,33 @@ public class GameManager : MonoBehaviour
 
       bool isCurrentPlayer = payout.username == currentPlayer;
 
-      foreach (var bet in payout.betWins)
-      {
-        if (!TryGetOption(bet.Key, out BetOptionView option)) continue;
-
-        ChipReference reference = isCurrentPlayer ? option.PlayerReferenceChip : option.OpponentReferenceChip;
-        chipManager.CollectToPlayer(reference, target.position, bet.Value, isCurrentPlayer);
-      }
-
-      // Update player balance for current player
+      System.Action onArrived = null;
       if (isCurrentPlayer)
       {
-        // Parse balance - remove any non-numeric characters (like "Rs")
-        string balanceText = uiManager.MainPlayers.playerBalence.text;
-        string numericBalance = new string(balanceText.Where(c => char.IsDigit(c) || c == '.').ToArray());
+        currentWin = payout.balance - balanceBefore;
+        double profit = currentWin - staked;
+        bool shown = false;
+        // Several chips can land together; the text plays for the first
+        if (profit > 0) onArrived = () =>
+        {
+          if (shown) return;
+          shown = true;
+          PlayProfitText(profit);
+        };
+      }
 
-        double oldBalance = double.Parse(numericBalance, System.Globalization.CultureInfo.InvariantCulture);
-        double newBalance = payout.balance;
-        currentWin = newBalance - oldBalance;
+      foreach (var bet in payout.betWins)
+      {
+        if (bet.Value <= 0 || !TryGetOption(bet.Key, out BetOptionView option)) continue;
+
+        ChipReference reference = isCurrentPlayer ? option.PlayerReferenceChip : option.OpponentReferenceChip;
+        // The player's own stake leaves the table with the win
+        int collected = isCurrentPlayer ? option.PlayerBet + bet.Value : bet.Value;
+        chipManager.CollectToPlayer(reference, target.position, collected, isCurrentPlayer, onArrived);
+      }
+
+      if (isCurrentPlayer)
+      {
         uiManager.MainPlayers.playerBalence.text = payout.balance.ToString();
         socketManager.playerdata.balance = payout.balance;
 
@@ -550,6 +685,30 @@ public class GameManager : MonoBehaviour
         }
       }
     }
+  }
+
+  void PlayProfitText(double profit)
+  {
+    if (!profitText) return;
+
+    RectTransform rect = profitText.rectTransform;
+    DOTween.Kill(profitText);
+    rect.anchoredPosition = profitTextHome;
+    profitText.alpha = 0f;
+    profitText.text = "+" + profit.ToString("0.##");
+    profitText.gameObject.SetActive(true);
+
+    ProfitTextSettings s = profitSettings;
+    float riseY = profitTextHome.y + s.riseDistance;
+    float driftY = riseY + s.driftDistance;
+
+    Sequence seq = DOTween.Sequence().SetTarget(profitText);
+    seq.Append(rect.DOAnchorPosY(riseY, s.riseDuration).SetEase(Ease.OutQuad));
+    seq.Join(profitText.DOFade(1f, s.riseDuration));
+    seq.Append(rect.DOAnchorPosY(driftY, s.driftDuration).SetEase(Ease.Linear));
+    seq.Append(rect.DOAnchorPosY(driftY + s.exitDistance, s.exitDuration).SetEase(Ease.InQuad));
+    seq.Join(profitText.DOFade(0f, s.exitDuration));
+    seq.OnComplete(() => profitText.gameObject.SetActive(false));
   }
 
 
@@ -628,21 +787,21 @@ public class GameManager : MonoBehaviour
     option.AddOpponentBet(bet.amount);
     opponentBets.Add((bet.betId, bet.username, option));
     chipManager.FlyOpponentChips(option.OpponentReferenceChip, bet.amount, () => RefreshOpponentChip(option));
-    HighlightLeaderboardBets();
+    // HighlightLeaderboardBets();
   }
 
   // Highlights bets made by the leaderboard players the user tapped
-  void HighlightLeaderboardBets()
-  {
-    if (!showLeaderboard) return;
-    foreach (var bet in opponentBets)
-    {
-      foreach (int index in LeaderboadrdShow)
-      {
-        if (bet.username == uiManager.WinnerPlayers[index].playername.text) bet.option.ShowLeaderboardHighlight();
-      }
-    }
-  }
+  // void HighlightLeaderboardBets()
+  // {
+  //   if (!showLeaderboard) return;
+  //   foreach (var bet in opponentBets)
+  //   {
+  //     foreach (int index in LeaderboadrdShow)
+  //     {
+  //       if (bet.username == uiManager.WinnerPlayers[index].playername.text) bet.option.ShowLeaderboardHighlight();
+  //     }
+  //   }
+  // }
   #endregion
 
 
@@ -773,8 +932,7 @@ public class GameManager : MonoBehaviour
   internal void playtheCoin(string winamount)
   {
     PlayerWinAnimation.gameObject.SetActive(true);
-    PlayerWinAnimation.StopAnimation();
-    PlayerWinAnimation.StartAnimation();
+    PlayerWinAnimation.Play();
   }
 
 
@@ -783,24 +941,21 @@ public class GameManager : MonoBehaviour
   {
 
   }
-  
-  internal void ManageBonus(int amount, string option)
-  {
-    if (!TryGetOption(option, out BetOptionView betOption)) return;
-    GameObject obj = Instantiate(ExtarPayObject, Bonusparent.transform);
-    obj.transform.position = betOption.transform.position;
-    obj.GetComponent<BonusPrefab>().SetNumberWithX(amount);
-  }
+}
 
-  public void ResetBonusUI()
-  {
-    LeaderboadrdShow.Clear();
-    LeaderboadrdShow.TrimExcess();
-    Transform parent = Bonusparent.transform;
+// Tuning for the floating "+profit" text; distances are in the text's anchored units
+[System.Serializable]
+public class ProfitTextSettings
+{
+  [Header("Rise (fade in)")]
+  public float riseDistance = 60f;
+  public float riseDuration = 0.2f;
 
-    for (int i = parent.childCount - 1; i >= 0; i--)
-    {
-      Destroy(parent.GetChild(i).gameObject);
-    }
-  }
+  [Header("Drift")]
+  public float driftDistance = 15f;
+  public float driftDuration = 0.8f;
+
+  [Header("Exit (fade out)")]
+  public float exitDistance = 80f;
+  public float exitDuration = 0.25f;
 }
