@@ -302,7 +302,7 @@
     "level_6": 20
   },
   "statsLimit": 60,
-  "diceInterval": 5500,
+  "diceInterval": 5000,
   "historyLimit": 8,
   "bonusInterval": 5000,
   "roundInterval": 10500,
