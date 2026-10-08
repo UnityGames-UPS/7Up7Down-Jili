@@ -1,4 +1,4 @@
-<Solution>
+﻿<Solution>
   <Project Path="Unity.Timeline.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.csproj" />
   <Project Path="Unity.2D.Aseprite.Editor.csproj" />
@@ -30,6 +30,7 @@
   <Project Path="Unity.2D.Tilemap.Extras.Editor.csproj" />
   <Project Path="Unity.TextMeshPro.csproj" />
   <Project Path="Unity.TextMeshPro.Editor.csproj" />
+  <Project Path="Coffee.SoftMaskForUGUI.csproj" />
   <Project Path="PsdPlugin.csproj" />
   <Project Path="Unity.2D.IK.Editor.csproj" />
   <Project Path="Unity.InternalAPIEngineBridge.001.csproj" />
@@ -44,12 +45,12 @@
   <Project Path="Coffee.UIEffect.Editor.csproj" />
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="UnityEditor.UI.csproj" />
+  <Project Path="Coffee.SoftMaskForUGUI.Editor.csproj" />
   <Project Path="Unity.PlasticSCM.Editor.Assistant.csproj" />
   <Project Path="Unity.2D.Sprite.Editor.csproj" />
   <Project Path="Unity.2D.PixelPerfect.Editor.csproj" />
   <Project Path="com.Tivadar.Best.SocketIO.csproj" />
   <Project Path="Unity.Multiplayer.Center.Common.csproj" />
-  <Project Path="Assembly-CSharp-Editor.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
   <Project Path="com.Tivadar.Best.WebSockets.csproj" />
   <Project Path="Unity.Collections.CodeGen.csproj" />

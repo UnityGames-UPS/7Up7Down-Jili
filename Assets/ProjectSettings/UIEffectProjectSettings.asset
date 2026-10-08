@@ -19,11 +19,23 @@ ShaderVariantCollection:
         passType: 0
       - keywords: DETAIL_MASKING
         passType: 0
+      - keywords: DETAIL_MASKING UNITY_UI_ALPHACLIP
+        passType: 0
+      - keywords: DETAIL_MULTIPLY UNITY_UI_ALPHACLIP
+        passType: 0
       - keywords: DETAIL_MULTIPLY_ADDITIVE
+        passType: 0
+      - keywords: DETAIL_MULTIPLY_ADDITIVE UNITY_UI_ALPHACLIP
+        passType: 0
+      - keywords: DETAIL_REPLACE UNITY_UI_ALPHACLIP
         passType: 0
       - keywords: EDGE_PLAIN
         passType: 0
+      - keywords: EDGE_PLAIN UNITY_UI_ALPHACLIP
+        passType: 0
       - keywords: EDGE_SHINY
+        passType: 0
+      - keywords: UNITY_UI_ALPHACLIP
         passType: 0
 --- !u!114 &11400000
 MonoBehaviour:

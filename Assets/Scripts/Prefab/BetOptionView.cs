@@ -32,7 +32,8 @@ public class BetOptionView : MonoBehaviour
   [SerializeField] private ImageAnimation winAnimation;
 
   [Header("Animations")]
-  // [SerializeField] private ImageAnimation leaderboardHighlight;
+  // Purple border shown while a leaderboard user's bets are highlighted
+  [SerializeField] private Image leaderboardBorder;
   // Where this option's bonus multiplier badge sits; the option itself when unset
   [SerializeField] private Transform bonusAnchor;
 
@@ -50,6 +51,8 @@ public class BetOptionView : MonoBehaviour
 
   private Transform winLayerHome;
   private int winLayerHomeIndex;
+  private Transform borderHome;
+  private int borderHomeIndex;
   private CanvasGroup dimGroup;
   private bool isDimmed;
   private Sequence shrink;
@@ -75,6 +78,7 @@ public class BetOptionView : MonoBehaviour
     }
     ClearAllBets();
     if (winLayer) winLayer.gameObject.SetActive(false);
+    BorderHighlight.HideInstant(leaderboardBorder);
   }
 
   void OnDestroy()
@@ -82,6 +86,7 @@ public class BetOptionView : MonoBehaviour
     DOTween.Kill(this);
     shrink?.Kill();
     if (dimGroup) dimGroup.DOKill();
+    if (leaderboardBorder) DOTween.Kill(leaderboardBorder);
   }
 
   internal void Setup(string betKey, string betType, string label, List<int> payout)
@@ -246,10 +251,31 @@ public class BetOptionView : MonoBehaviour
     winBorder.color = color;
   }
 
-  // internal void ShowLeaderboardHighlight()
-  // {
-  //   if (leaderboardHighlight) leaderboardHighlight.gameObject.SetActive(true);
-  // }
+  // With a layer, the border is moved onto it while lit so it draws above the neighbouring UI
+  internal void ShowLeaderboardHighlight(BorderHighlightSettings settings, Transform layer = null)
+  {
+    if (!leaderboardBorder) return;
+
+    if (layer && !borderHome)
+    {
+      borderHome = leaderboardBorder.transform.parent;
+      borderHomeIndex = leaderboardBorder.transform.GetSiblingIndex();
+      leaderboardBorder.transform.SetParent(layer, true);
+    }
+    BorderHighlight.Show(leaderboardBorder, settings);
+  }
+
+  internal void HideLeaderboardHighlight(BorderHighlightSettings settings) =>
+    BorderHighlight.Hide(leaderboardBorder, settings, ReturnBorderHome);
+
+  void ReturnBorderHome()
+  {
+    if (!borderHome) return;
+
+    leaderboardBorder.transform.SetParent(borderHome, true);
+    leaderboardBorder.transform.SetSiblingIndex(borderHomeIndex);
+    borderHome = null;
+  }
 
   static void ShowReferenceChip(Image chip, TMP_Text label, int total, Sprite sprite)
   {

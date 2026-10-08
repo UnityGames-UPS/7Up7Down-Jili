@@ -71,9 +71,15 @@ public class GameManager : MonoBehaviour
   [SerializeField] private float bannerDimFade = 0.15f;
   // How far through the Extra Pay banner the multipliers appear
   [Range(0f, 1f)] [SerializeField] private float extraPayRevealAt = 0.7f;
-  // [SerializeField] internal List<int> LeaderboadrdShow = new List<int>();
-  // Off while the scene has no leaderboard UI; data is still received and logged
-  [SerializeField] internal bool showLeaderboard = false;
+
+  [Header("Leaderboard")]
+  [SerializeField] private LeaderboardManager leaderboardManager;
+  // Above the table UI; the three main options' highlight borders are moved here while lit
+  [SerializeField] private Transform leaderboardBorderLayer;
+  // Leaderboard user whose bets are lit up; null when none
+  private string highlightedUser;
+  // From cashout until the next round starts, chips are being settled and cannot be highlighted
+  private bool highlightLocked;
 
   [Header("Win Animation")]
   // Above the table UI; each winning option's win layer is moved here while it plays
@@ -114,6 +120,7 @@ public class GameManager : MonoBehaviour
   void Awake()
   {
     foreach (var option in betOptions) option.Clicked += OnBetOptionClicked;
+    leaderboardManager.AvatarClicked += OnLeaderboardAvatarClicked;
     BetBlocker.SetActive(false);
     if (roundBannerGroup) roundBannerGroup.blocksRaycasts = false;
     if (roundBannerDim) bannerDimAlpha = roundBannerDim.color.a;
@@ -238,48 +245,60 @@ public class GameManager : MonoBehaviour
 
   void SetPlayerData(Player player)
   {
-    uiManager.MainPlayers.SetData(player.username, player.balance.ToString(), uiManager.UserIcons[0]);
+    uiManager.MainPlayers.SetData(player.username, player.balance.ToString(), leaderboardManager.PlayerAvatar);
   }
   // Leaderboards arrive with the JOIN_LEVEL ack, the PLAYER_MODE ack and every game:cashout
   internal void SetOtherplayerData(Leaderboards leaderboard)
   {
-    if (leaderboard == null)
+    if (socketManager.logs.leaderboard)
+      Debug.Log("[LEADERBOARD] " + (leaderboard == null ? "none in payload" : DescribeLeaderboard(leaderboard)));
+
+    // No leaderboard in the payload empties the board, same as an empty list
+    ClearLeaderboardHighlight();
+    leaderboardManager.SetWinners(leaderboard?.winners, uiManager.MainPlayers.playername.text);
+  }
+
+  void OnLeaderboardAvatarClicked(string username)
+  {
+    if (highlightLocked || string.IsNullOrEmpty(username)) return;
+
+    if (username == highlightedUser)
     {
-      if (socketManager.logs.leaderboard) Debug.Log("[LEADERBOARD] none in payload");
+      ClearLeaderboardHighlight();
       return;
     }
 
-    if (socketManager.logs.leaderboard) Debug.Log("[LEADERBOARD] " + DescribeLeaderboard(leaderboard));
-    if (!showLeaderboard) return;
+    // A user with no chips down leaves the current highlight alone
+    List<BetOptionView> options = OptionsWithChips(username);
+    if (options.Count == 0) return;
 
-    // string mainPlayerName = uiManager.MainPlayers.playername.text;
-    // Sprite mainPlayerIcon = uiManager.MainPlayers.PlayerIcon.sprite;
+    ClearLeaderboardHighlight();
+    highlightedUser = username;
+    leaderboardManager.ShowHighlight(username);
+    foreach (var option in options) ShowOptionHighlight(option);
+  }
 
-    // // One WinnerPlayers slot per top winner; unused slots stay hidden
-    // foreach (var item in uiManager.WinnerPlayers)
-    //   item.gameObject.SetActive(false);
+  void ShowOptionHighlight(BetOptionView option)
+  {
+    Transform layer = option.BetType == "main_bets" ? leaderboardBorderLayer : null;
+    option.ShowLeaderboardHighlight(leaderboardManager.HighlightSettings, layer);
+  }
 
-    // if (leaderboard.winners == null) return;
+  void ClearLeaderboardHighlight()
+  {
+    if (highlightedUser == null) return;
 
-    // int winnersCount = Mathf.Min(leaderboard.winners.Count, uiManager.WinnerPlayers.Count);
+    highlightedUser = null;
+    leaderboardManager.HideHighlight();
+    foreach (var option in betOptions) option.HideLeaderboardHighlight(leaderboardManager.HighlightSettings);
+  }
 
-    // for (int i = 0; i < winnersCount; i++)
-    // {
-    //   Winner win = leaderboard.winners[i];
+  List<BetOptionView> OptionsWithChips(string username)
+  {
+    if (username == uiManager.MainPlayers.playername.text)
+      return betOptions.Where(o => o.HasPlayerBet).ToList();
 
-    //   // Other players have no avatar from the server, so they get a random icon
-    //   Sprite iconToUse = (win.username == mainPlayerName)
-    //       ? mainPlayerIcon
-    //       : uiManager.UserIcons[UnityEngine.Random.Range(0, uiManager.UserIcons.Count)];
-
-    //   uiManager.WinnerPlayers[i].SetData(
-    //       win.username,
-    //       win.totalWins.ToString(),
-    //       iconToUse
-    //   );
-
-    //   uiManager.WinnerPlayers[i].gameObject.SetActive(true);
-    // }
+    return opponentBets.Where(b => b.username == username).Select(b => b.option).Distinct().ToList();
   }
 
   string DescribeLeaderboard(Leaderboards leaderboard)
@@ -495,6 +514,7 @@ public class GameManager : MonoBehaviour
   internal void OnGameLoopStart()
   {
     repeatPending = false;
+    highlightLocked = false;
     SetBettingClosed(false);
     chipManager.ReturnAllItemsToPool();
     opponentBets.Clear();
@@ -509,7 +529,6 @@ public class GameManager : MonoBehaviour
     StopWinAnimations();
     pendingBonus = null;
     if (bonusManager) bonusManager.ReturnAllItemsToPool();
-    // LeaderboadrdShow.Clear();
   }
 
   internal void ManageResult(DiceResultEvent diceResult)
@@ -562,8 +581,10 @@ public class GameManager : MonoBehaviour
   }
   IEnumerator ManagePayout(CashoutEvent cashout)
   {
-    // Read now: losing options clear their bets while they shrink
-    int staked = betOptions.Sum(o => o.PlayerBet);
+    highlightLocked = true;
+    ClearLeaderboardHighlight();
+
+    // Read now: a balance:sync can land during the payout wait
     double balanceBefore = socketManager.playerdata.balance;
 
     // Winners stay lit so the dealer's chips land on a bright spot
@@ -577,16 +598,19 @@ public class GameManager : MonoBehaviour
 
     ManagePayments(cashout.payouts);
     yield return new WaitForSeconds(2f);
-    DistributePayouts(cashout.payouts, staked, balanceBefore);
+    DistributePayouts(cashout.payouts, balanceBefore);
     foreach (var option in betOptions)
     {
       option.ClearAllBets();
       option.SetDimmed(false);
     }
     RefreshBetButtons();
-    SetOtherplayerData(cashout.leaderboards);
     uiManager.SetNetBetPanel(0);
-    yield return new WaitForSeconds(2f);
+    // Winning chips are still flying to the avatars the old leaderboard shows
+    float collect = chipManager.CollectDuration;
+    yield return new WaitForSeconds(collect);
+    SetOtherplayerData(cashout.leaderboards);
+    yield return new WaitForSeconds(Mathf.Max(0f, 2f - collect));
     if (isSinglePlayer && isAuto) socketManager.SendRepeat();
   }
 
@@ -635,7 +659,7 @@ public class GameManager : MonoBehaviour
         () => option.ShowOpponentWin(total, chipManager.GetSprite(total, false)));
     }
   }
-  void DistributePayouts(List<Payout> payouts, int staked, double balanceBefore)
+  void DistributePayouts(List<Payout> payouts, double balanceBefore)
   {
     string currentPlayer = uiManager.MainPlayers.playername.text;
 
@@ -643,8 +667,7 @@ public class GameManager : MonoBehaviour
     {
       if (payout.betWins == null) continue;
 
-      Transform target = FindPlayerTransform(payout.username);
-      if (target == null) target = TotalPlayer_text.transform;
+      Transform target = PayoutTarget(payout.username);
 
       bool isCurrentPlayer = payout.username == currentPlayer;
 
@@ -652,7 +675,7 @@ public class GameManager : MonoBehaviour
       if (isCurrentPlayer)
       {
         currentWin = payout.balance - balanceBefore;
-        double profit = currentWin - staked;
+        double profit = currentWin;
         bool shown = false;
         // Several chips can land together; the text plays for the first
         if (profit > 0) onArrived = () =>
@@ -714,6 +737,7 @@ public class GameManager : MonoBehaviour
 
   internal void ResetAllBetOptions()
   {
+    ClearLeaderboardHighlight();
     foreach (var option in betOptions) option.ClearAllBets();
     RefreshBetButtons();
   }
@@ -781,27 +805,28 @@ public class GameManager : MonoBehaviour
       option.AddOpponentBet(bet.amount);
       RefreshOpponentChip(option);
       opponentBets.RemoveAll(b => b.betId == bet.betId);
+      if (bet.username == highlightedUser) DropHighlightIfEmpty(option);
       return;
     }
 
     option.AddOpponentBet(bet.amount);
+    bool alreadyOnOption = opponentBets.Any(b => b.username == bet.username && b.option == option);
     opponentBets.Add((bet.betId, bet.username, option));
-    chipManager.FlyOpponentChips(option.OpponentReferenceChip, bet.amount, () => RefreshOpponentChip(option));
-    // HighlightLeaderboardBets();
+
+    leaderboardManager.TryGetChipAnchor(bet.username, out Transform origin);
+    chipManager.FlyOpponentChips(option.OpponentReferenceChip, bet.amount, origin, () => RefreshOpponentChip(option));
+
+    if (bet.username == highlightedUser && !alreadyOnOption)
+      ShowOptionHighlight(option);
   }
 
-  // Highlights bets made by the leaderboard players the user tapped
-  // void HighlightLeaderboardBets()
-  // {
-  //   if (!showLeaderboard) return;
-  //   foreach (var bet in opponentBets)
-  //   {
-  //     foreach (int index in LeaderboadrdShow)
-  //     {
-  //       if (bet.username == uiManager.WinnerPlayers[index].playername.text) bet.option.ShowLeaderboardHighlight();
-  //     }
-  //   }
-  // }
+  // The highlighted user took chips back: unlight that option, or everything if none are left
+  void DropHighlightIfEmpty(BetOptionView option)
+  {
+    List<BetOptionView> remaining = OptionsWithChips(highlightedUser);
+    if (remaining.Count == 0) ClearLeaderboardHighlight();
+    else if (!remaining.Contains(option)) option.HideLeaderboardHighlight(leaderboardManager.HighlightSettings);
+  }
   #endregion
 
 
@@ -811,26 +836,12 @@ public class GameManager : MonoBehaviour
     foreach (var option in betOptions) option.StopWin();
   }
 
-  // Where a player's payout chips fly to; null means the caller falls back to the player-count label
-  private Transform FindPlayerTransform(string playerId)
+  // Where a player's payout chips fly to; opponents off the leaderboard share the spot their chips came from
+  private Transform PayoutTarget(string username)
   {
-    if (uiManager.MainPlayers.playername.text == playerId)
-      return uiManager.MainPlayers.transform;
-
-    if (showLeaderboard)
-    {
-      foreach (var p in uiManager.RichestPlayers)
-      {
-        if (p != null && p.playername.text == playerId) return p.transform;
-      }
-
-      foreach (var p in uiManager.WinnerPlayers)
-      {
-        if (p != null && p.playername.text == playerId) return p.transform;
-      }
-    }
-
-    return null;
+    if (uiManager.MainPlayers.playername.text == username) return uiManager.MainPlayers.ChipAnchor;
+    if (leaderboardManager.TryGetChipAnchor(username, out Transform anchor)) return anchor;
+    return chipManager.OpponentOrigin;
   }
   #endregion
 

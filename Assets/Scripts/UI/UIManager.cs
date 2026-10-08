@@ -289,9 +289,6 @@ public class UiManager : MonoBehaviour
   [SerializeField] internal TMP_Text NetBet;
   [Header("player data")]
   [SerializeField] internal PlayerData MainPlayers;
-  [SerializeField] internal List<PlayerData> RichestPlayers;
-  [SerializeField] internal List<PlayerData> WinnerPlayers;
-  [SerializeField] internal List<Sprite> UserIcons;
   [Header("SetBetLimit  data")]
   [SerializeField] internal GameObject BetLimitPanel;
   [SerializeField] internal List<Button> LimitBtn;
@@ -507,17 +504,6 @@ public class UiManager : MonoBehaviour
     // HistoryRight.onClick.AddListener(delegate { if (CurrentHistoryPage + 1 < MaxHistoryPage) socketManager.SendHistory(CurrentHistoryPage + 1); });
     MultiplayerBtn.interactable = false;
     MultiplayerBtn.image.sprite = SelectedSprite;
-
-    if (gameManager.showLeaderboard)
-    {
-      // for (int i = 0; i < WinnerPlayers.Count; i++)
-      // {
-      //   int index = i;
-
-      //   WinnerPlayers[i].Leaderboardbtn.onClick.RemoveAllListeners();
-      //   WinnerPlayers[i].Leaderboardbtn.onClick.AddListener(() => OnClickLeaderboardIcon(index));
-      // }
-    }
   }
 
 
@@ -1352,7 +1338,7 @@ public class UiManager : MonoBehaviour
   {
     socketManager.SendModeSelection("multiple");
     ToggleBetLimitPanel();
-    if (gameManager.showLeaderboard) LeaderBoard.SetActive(true);
+    if (LeaderBoard) LeaderBoard.SetActive(true);
     Diamond.SetActive(false);
     StartBtn.gameObject.SetActive(false);
     gameManager.isSinglePlayer = false;
@@ -1366,7 +1352,7 @@ public class UiManager : MonoBehaviour
   {
     socketManager.SendModeSelection("single");
     ToggleBetLimitPanel();
-    if (gameManager.showLeaderboard) LeaderBoard.SetActive(false);
+    if (LeaderBoard) LeaderBoard.SetActive(false);
     Diamond.SetActive(true);
     StartBtn.gameObject.SetActive(true);
     gameManager.isSinglePlayer = true;
@@ -1391,12 +1377,6 @@ public class UiManager : MonoBehaviour
     Repeatbtn.gameObject.SetActive(!autoOn && !offerAuto);
     Repeatbtn.interactable = canRepeat;
   }
-
-  // internal void OnClickLeaderboardIcon(int index)
-  // {
-  //   WinnerPlayers[index].purpleCircle.gameObject.SetActive(true);
-  //   gameManager.LeaderboadrdShow.Add(index);
-  // }
 
 
 }

@@ -19,6 +19,7 @@ public class ChipManager : GenericObjectPool<Chip>
   [SerializeField] private float spawnScale = 1.2f;
   [SerializeField] private float dropDuration = 0.25f;
   [SerializeField] private float opponentFlyDuration = 0.4f;
+  [SerializeField] private float opponentFadeIn = 0.02f;
   [SerializeField] private float settleDuration = 0.1f;
   [SerializeField] private float chipStagger = 0.05f;
 
@@ -28,6 +29,8 @@ public class ChipManager : GenericObjectPool<Chip>
   [SerializeField] private float loseShrinkDuration = 0.3f;
 
   internal float LoseShrinkDuration => loseShrinkDuration;
+  internal float CollectDuration => collectDuration;
+  internal Transform OpponentOrigin => opponentOrigin;
 
   private List<int> denominations = new List<int>();
 
@@ -67,12 +70,14 @@ public class ChipManager : GenericObjectPool<Chip>
 
   internal void DropPlayerChips(ChipReference reference, int amount, Action onLanded)
   {
-    PlaceChips(reference, amount, true, dropDuration, onLanded);
+    PlaceChips(reference, amount, true, reference.Rect.position, dropDuration, dropDuration, onLanded);
   }
 
-  internal void FlyOpponentChips(ChipReference reference, int amount, Action onLanded)
+  // Leaves from the bettor's leaderboard avatar when they have one
+  internal void FlyOpponentChips(ChipReference reference, int amount, Transform origin, Action onLanded)
   {
-    PlaceChips(reference, amount, false, opponentFlyDuration, onLanded);
+    Vector3 start = (origin ? origin : opponentOrigin).position;
+    PlaceChips(reference, amount, false, start, opponentFlyDuration, opponentFadeIn, onLanded);
   }
 
   // Payouts travel as one chip carrying the whole amount
@@ -105,14 +110,13 @@ public class ChipManager : GenericObjectPool<Chip>
     base.ReturnAllItemsToPool();
   }
 
-  void PlaceChips(ChipReference reference, int amount, bool isPlayer, float travelDuration, Action onLanded)
+  void PlaceChips(ChipReference reference, int amount, bool isPlayer, Vector3 start, float travelDuration, float fadeDuration, Action onLanded)
   {
     List<int> chips = BreakIntoChips(amount);
     for (int i = 0; i < chips.Count; i++)
     {
-      Chip chip = Spawn(chips[i], isPlayer, reference, reference.Rect.position);
+      Chip chip = Spawn(chips[i], isPlayer, reference, start);
       if (isPlayer) chip.Rect.localPosition += Vector3.up * spawnHeight;
-      else chip.Rect.position = opponentOrigin.position;
 
       chip.Rect.localScale = Vector3.one * spawnScale;
       chip.SetAlpha(0f);
@@ -120,7 +124,7 @@ public class ChipManager : GenericObjectPool<Chip>
       Sequence seq = DOTween.Sequence().SetTarget(chip);
       seq.AppendInterval(i * chipStagger);
       seq.Append(chip.Rect.DOMove(reference.Rect.position, travelDuration).SetEase(Ease.OutQuad));
-      seq.Join(DOVirtual.Float(0f, 1f, travelDuration, chip.SetAlpha));
+      seq.Join(DOVirtual.Float(0f, 1f, fadeDuration, chip.SetAlpha));
       seq.Append(chip.Rect.DOScale(1f, settleDuration));
       seq.OnComplete(() =>
       {
