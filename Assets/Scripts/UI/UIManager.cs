@@ -19,7 +19,7 @@ public class UiManager : MonoBehaviour
   [Header("Cursor")]
   [SerializeField] private Texture2D cursorTexture;
   [SerializeField] private Vector2 cursorHotspot = Vector2.zero;
-  [Tooltip("Cursor size in pixels. Leave at 0 to use the texture's own size.")]
+  [Tooltip("Editor-only cursor size in pixels. Builds use the texture's imported size, which must stay 32 or under.")]
   [SerializeField] private Vector2Int cursorSize = Vector2Int.zero;
 
   private void Awake()
@@ -38,7 +38,8 @@ public class UiManager : MonoBehaviour
     Texture2D texture = cursorTexture;
     Vector2 hotspot = cursorHotspot;
 
-    bool resize = cursorSize.x > 0 && cursorSize.y > 0
+    // Builds keep the imported size: browsers drop a CSS cursor over 32px near the viewport edge
+    bool resize = Application.isEditor && cursorSize.x > 0 && cursorSize.y > 0
       && (cursorSize.x != cursorTexture.width || cursorSize.y != cursorTexture.height);
     if (resize)
     {
