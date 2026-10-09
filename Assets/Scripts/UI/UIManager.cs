@@ -164,12 +164,6 @@ public class UiManager : MonoBehaviour
   private GameObject SoundOn_Object;
   [SerializeField]
   private GameObject SoundOff_Object;
-  [Header("RoadMap Popup")]
-
-  [SerializeField] private GameObject RoadMapPopup;
-  [SerializeField] private Button CloseRoadmap;
-  [SerializeField] private Button OpenRoadMapBtn;
-  [SerializeField] private Button OpenRoadMapBtn2;
   [Header("Disconnection Popup")]
   [SerializeField]
   private Button CloseDisconnect_Button;
@@ -237,24 +231,6 @@ public class UiManager : MonoBehaviour
 
 
 
-  [Header("stats")]
-  [SerializeField] private List<StatsPrefab> LineStats;
-  [SerializeField] private GameObject StatsPref;
-  [SerializeField] private Transform StatsParent;
-  [SerializeField] private Image FillAb;
-  [SerializeField] private TMP_Text TwoSixPercentage;
-  [SerializeField] private TMP_Text SevenPercentage;
-  [SerializeField] private TMP_Text EightTwelvePercentage;
-  [SerializeField] private TMP_Text TotalRounds;
-  [SerializeField] internal List<Sprite> DiceSprites;
-  [SerializeField] internal List<Sprite> Resultcolor;
-  // Add these fields to your class
-  [SerializeField] private List<StatsList> verticalColumns;
-  [SerializeField] private Transform VerticalGridParent; // Assign your new grid parent in inspector
-  private List<DiceStatsPrefab> gridStats = new List<DiceStatsPrefab>();
-  private const int MAX_GRID = 105;
-
-
   [Header("coins")]
   [SerializeField] internal GameObject chipPanel;
   [SerializeField] internal Chip coinSelector;
@@ -290,27 +266,12 @@ public class UiManager : MonoBehaviour
   [SerializeField] internal TMP_Text NetBet;
   [Header("player data")]
   [SerializeField] internal PlayerData MainPlayers;
-  [Header("SetBetLimit  data")]
-  [SerializeField] internal GameObject BetLimitPanel;
-  [SerializeField] internal List<Button> LimitBtn;
-  [SerializeField] internal Button OpenLimit;
-  [SerializeField] internal Sprite SelectedSprite;
-  [SerializeField] internal Sprite NotSelectedSprite;
-
-  [SerializeField] internal Button MultiplayerBtn;
-  [SerializeField] internal Button SinglePlayerBtn;
-
-  [SerializeField] private Transform openPosition;
-  [SerializeField] private Transform closedPosition;
-
   [Header("Menu Panel")]
   [SerializeField] private float slideDuration = 0.3f;
   private bool isAnimating = false;
   private Vector3 originalPosition;
 
   private RectTransform buttonRect;
-
-  private bool isOpen = false;
 
   private int uiSelectedCoin = 0;
 
@@ -449,20 +410,6 @@ public class UiManager : MonoBehaviour
 
     if (HistoryClose_button) HistoryClose_button.onClick.RemoveAllListeners();
     if (HistoryClose_button) HistoryClose_button.onClick.AddListener(delegate { ClosePopup(HistoryPopup_Object); });
-    if (OpenRoadMapBtn) OpenRoadMapBtn.onClick.RemoveAllListeners();
-    if (OpenRoadMapBtn) OpenRoadMapBtn.onClick.AddListener(delegate { OpenPopup(RoadMapPopup); });
-    if (OpenRoadMapBtn2) OpenRoadMapBtn2.onClick.RemoveAllListeners();
-    if (OpenRoadMapBtn2) OpenRoadMapBtn2.onClick.AddListener(delegate { OpenPopup(RoadMapPopup); });
-    if (CloseRoadmap) CloseRoadmap.onClick.RemoveAllListeners();
-    if (CloseRoadmap) CloseRoadmap.onClick.AddListener(delegate { ClosePopup(RoadMapPopup); });
-
-    if (OpenLimit) OpenLimit.onClick.RemoveAllListeners();
-    if (OpenLimit) OpenLimit.onClick.AddListener(delegate { ToggleBetLimitPanel(); });
-
-    if (MultiplayerBtn) MultiplayerBtn.onClick.RemoveAllListeners();
-    if (MultiplayerBtn) MultiplayerBtn.onClick.AddListener(delegate { OnMultiplayerMode(); MultiplayerBtn.interactable = false; SinglePlayerBtn.interactable = true; });
-    if (SinglePlayerBtn) SinglePlayerBtn.onClick.RemoveAllListeners();
-    if (SinglePlayerBtn) SinglePlayerBtn.onClick.AddListener(delegate { OnSinglePlayerMode(); MultiplayerBtn.interactable = true; SinglePlayerBtn.interactable = false; });
 
     Repeatbtn.onClick.RemoveAllListeners();
     Repeatbtn.onClick.AddListener(delegate { gameManager.RequestRepeat(); });
@@ -477,21 +424,13 @@ public class UiManager : MonoBehaviour
     Doublebtn.onClick.AddListener(delegate { socketManager.SendDouble(); });
 
     AutoBtn.onClick.RemoveAllListeners();
-    AutoBtn.onClick.AddListener(delegate
-    {
-      StartBtn.interactable = false;
-      gameManager.SetAuto(true);
-    });
+    AutoBtn.onClick.AddListener(delegate { gameManager.SetAuto(true); });
 
     StartBtn.onClick.RemoveAllListeners();
-    StartBtn.onClick.AddListener(delegate { socketManager.SendStart(); });
+    StartBtn.onClick.AddListener(delegate { gameManager.StartRound(); });
 
     StopAutoBtn.onClick.RemoveAllListeners();
-    StopAutoBtn.onClick.AddListener(delegate
-    {
-      StartBtn.interactable = true;
-      gameManager.SetAuto(false);
-    });
+    StopAutoBtn.onClick.AddListener(delegate { gameManager.SetAuto(false); });
 
     foreach (Button btn in new[] { Repeatbtn, Undubtn, Canclebtn, Doublebtn, AutoBtn, StartBtn, StopAutoBtn })
     {
@@ -503,8 +442,6 @@ public class UiManager : MonoBehaviour
 
     // HistoryRight.onClick.RemoveAllListeners();
     // HistoryRight.onClick.AddListener(delegate { if (CurrentHistoryPage + 1 < MaxHistoryPage) socketManager.SendHistory(CurrentHistoryPage + 1); });
-    MultiplayerBtn.interactable = false;
-    MultiplayerBtn.image.sprite = SelectedSprite;
   }
 
 
@@ -628,145 +565,6 @@ public class UiManager : MonoBehaviour
     isAnimating = false;
   }
 
-  internal void SetgameRulePanel()
-  {
-    if (socketManager?.roomData?.stats == null) return;
-
-    int invalidStats = 0;
-    string firstInvalidStat = null;
-
-    foreach (string statJson in socketManager.roomData.stats)
-    {
-      // Parse the JSON string
-      DiceData diceData = JsonUtility.FromJson<DiceData>(statJson);
-
-      // The server can send 0/0 entries for rounds that have no dice result
-      bool hasDice = diceData != null && diceData.dice1 >= 1 && diceData.dice1 <= 6
-          && diceData.dice2 >= 1 && diceData.dice2 <= 6;
-      if (hasDice)
-      {
-
-        // Access your values
-        int dice1 = diceData.dice1;
-        int dice2 = diceData.dice2;
-        bool isBonus = diceData.isBonus;
-        int total = dice1 + dice2;
-        Sprite winColor;
-        if (total == 7)
-        {
-          winColor = Resultcolor[1];
-        }
-        else if (total < 7)
-        {
-          winColor = Resultcolor[0];
-        }
-        else
-        {
-          winColor = Resultcolor[2];
-        }
-        UpdateStats(total, DiceSprites[dice1 - 1], DiceSprites[dice2 - 1], isBonus);
-      }
-      else
-      {
-        invalidStats++;
-        if (firstInvalidStat == null) firstInvalidStat = statJson;
-      }
-    }
-
-    if (invalidStats > 0)
-    {
-      Debug.LogError("[JOIN_LEVEL] stats: skipped " + invalidStats + " of " + socketManager.roomData.stats.Count
-          + " entries with dice outside 1-6, e.g. " + firstInvalidStat);
-    }
-
-    List<List<int>> allLevels = new List<List<int>>
-    {
-        socketManager.initialData.bets.level_1,
-        socketManager.initialData.bets.level_2,
-        socketManager.initialData.bets.level_3,
-        socketManager.initialData.bets.level_4,
-        socketManager.initialData.bets.level_5,
-        socketManager.initialData.bets.level_6
-    };
-
-
-
-    for (int i = 0; i < LimitBtn.Count && i < allLevels.Count; i++)
-    {
-      int levelIndex = i;
-      List<int> currentLevel = allLevels[levelIndex];
-
-      if (currentLevel == null || currentLevel.Count == 0) continue;
-
-      // Get min and max bet for this level
-      int minBet = currentLevel[0];
-      int maxBet = currentLevel[currentLevel.Count - 1];
-
-      // Format the text
-      string formattedText = FormatBetRange(minBet, maxBet);
-
-      // Find the text component in the button's children
-      TMP_Text buttonText = GetButtonTextComponent(LimitBtn[levelIndex]);
-      if (buttonText != null)
-      {
-        buttonText.text = formattedText;
-      }
-
-      // Add click listener
-      int levelNum = levelIndex + 1; // For level_1, level_2 etc.
-      LimitBtn[levelIndex].onClick.RemoveAllListeners();
-      LimitBtn[levelIndex].onClick.AddListener(() => OnLimitButtonClicked(levelNum));
-    }
-
-  }
-  private string FormatBetRange(int minBet, int maxBet)
-  {
-    string minFormatted = FormatNumber(minBet);
-    string maxFormatted = FormatNumber(maxBet);
-
-    // If min and max are the same (only one bet amount), just show that amount
-    if (minBet == maxBet)
-    {
-      return minFormatted;
-    }
-
-    // Otherwise show the range
-    return $"{minFormatted} - {maxFormatted}";
-  }
-  private void OnLimitButtonClicked(int levelNumber)
-  {
-    if (gameManager.currentRoom != socketManager.initialData.levels[levelNumber - 1])
-    {
-      foreach (var txt in LimitBtn)
-      {
-        TMP_Text butT = GetButtonTextComponent(txt);
-        if (butT != null)
-        {
-          butT.color = Color.white;
-        }
-      }
-      TMP_Text butTe = GetButtonTextComponent(LimitBtn[levelNumber - 1]);
-      if (butTe != null)
-      {
-        butTe.color = Color.yellow;
-      }
-      socketManager.SendHome();
-      gameManager.currentRoom = socketManager.initialData.levels[levelNumber - 1];
-      ToggleBetLimitPanel();
-    }
-  }
-
-  private TMP_Text GetButtonTextComponent(Button button)
-  {
-
-
-    // Otherwise find in children
-    TMP_Text textComponent = button.GetComponentInChildren<TMP_Text>();
-    if (textComponent != null) return textComponent;
-
-    // Try to find TextMeshPro component
-    return button.GetComponentInChildren<TMP_Text>();
-  }
   internal string FormatNumber(int number)
   {
     if (number >= 1000)
@@ -1092,202 +890,6 @@ public class UiManager : MonoBehaviour
 
 
 
-  #region Stats Panel
-
-
-
-
-
-  internal void UpdateStats(int diceTotal, Sprite diceOne, Sprite diceTwo, bool isStar)
-  {
-    Sprite colorindex = Resultcolor[GetColorIndex(diceTotal)];
-    UpdateLineStats(diceTotal.ToString(), diceOne, diceTwo, colorindex, isStar);
-    UpdateGridStats(diceTotal.ToString(), colorindex, isStar);
-    AddToVerticalGrid(diceTotal, colorindex, isStar);
-    CalculateAndShowPercentage();
-
-  }
-
-  private void UpdateLineStats(string diceTotal, Sprite diceOne, Sprite diceTwo, Sprite colorindex, bool isStar)
-  {
-    int activeCount = 0;
-
-    for (int i = 0; i < LineStats.Count; i++)
-      if (LineStats[i].gameObject.activeSelf)
-        activeCount++;
-
-    if (activeCount < LineStats.Count)
-    {
-      activeCount++;
-      LineStats[activeCount - 1].gameObject.SetActive(true);
-    }
-
-    for (int i = activeCount - 1; i > 0; i--)
-      LineStats[i].CopyFrom(LineStats[i - 1]);
-
-    LineStats[0].SetData(diceTotal, diceOne, diceTwo, colorindex, isStar, true);
-
-    for (int i = 1; i < activeCount; i++)
-      LineStats[i].HighBg.SetActive(false);
-  }
-
-
-
-  private void UpdateGridStats(string diceTotal, Sprite colorindex, bool isStar)
-  {
-    if (gridStats.Count >= MAX_GRID)
-    {
-      Destroy(gridStats[0].gameObject);
-      gridStats.RemoveAt(0);
-    }
-
-    DiceStatsPrefab stat = Instantiate(StatsPref, StatsParent).GetComponent<DiceStatsPrefab>();
-    stat.SetData(diceTotal, colorindex, isStar);
-
-    gridStats.Add(stat);
-  }
-  private int currentColumn = 0;
-  private int currentRow = 0;
-
-  private void AddToVerticalGrid(int diceTotal, Sprite colorSprite, bool isStar)
-  {
-    int colorIndex = GetColorIndex(diceTotal);
-
-    // Check if we should stay in same column
-    bool sameColor = false;
-    if (currentRow > 0 && currentColumn < verticalColumns.Count)
-    {
-      var lastCell = verticalColumns[currentColumn].row[currentRow - 1];
-      if (lastCell.colorIndex == colorIndex)
-      {
-        sameColor = true;
-      }
-    }
-
-    // If same color and column not full, add to same column
-    if (sameColor && currentRow < 7)
-    {
-      // Add to current column, next row
-      AddCell(currentColumn, currentRow, diceTotal, colorSprite, isStar, colorIndex);
-      currentRow++;
-    }
-    else
-    {
-      // Move to next column
-      currentColumn++;
-      currentRow = 0;
-
-      // If we exceed column limit, shift everything left
-      if (currentColumn >= 15)
-      {
-        ShiftColumnsLeft();
-        currentColumn = 14; // Last column
-      }
-
-      // Add to new column
-      AddCell(currentColumn, currentRow, diceTotal, colorSprite, isStar, colorIndex);
-      currentRow++;
-    }
-  }
-
-  private void AddCell(int col, int row, int diceTotal, Sprite colorSprite, bool isStar, int colorIndex)
-  {
-    if (col < verticalColumns.Count && row < verticalColumns[col].row.Count)
-    {
-      var cell = verticalColumns[col].row[row];
-      cell.SetData(diceTotal.ToString(), colorSprite, isStar);
-      cell.colorIndex = colorIndex;
-      cell.gameObject.SetActive(true);
-    }
-  }
-
-  private void ShiftColumnsLeft()
-  {
-    // Shift all columns left by 1
-    for (int col = 1; col < verticalColumns.Count; col++)
-    {
-      for (int row = 0; row < verticalColumns[col].row.Count; row++)
-      {
-        // Copy data from column to column-1
-        var sourceCell = verticalColumns[col].row[row];
-        var targetCell = verticalColumns[col - 1].row[row];
-
-        targetCell.SetData(sourceCell.diceTotals, sourceCell.WinColor.sprite, sourceCell.winner);
-        targetCell.colorIndex = sourceCell.colorIndex;
-        targetCell.gameObject.SetActive(sourceCell.gameObject.activeSelf);
-      }
-    }
-
-    // Clear last column
-    int lastCol = verticalColumns.Count - 1;
-    for (int row = 0; row < verticalColumns[lastCol].row.Count; row++)
-    {
-      var cell = verticalColumns[lastCol].row[row];
-      cell.gameObject.SetActive(false);
-      cell.colorIndex = -1;
-    }
-  }
-
-  internal int GetColorIndex(int diceTotal)
-  {
-    if (diceTotal >= 2 && diceTotal <= 6) return 0;
-    if (diceTotal == 7) return 1;
-    return 2;
-  }
-
-
-  internal void CalculateAndShowPercentage()
-  {
-    var stats = GetStats();
-    int total = stats.Count;
-
-    //  Debug.Log($"[Percentage] Total Stats = {total}");
-    if (total == 0) return;
-
-    int seven = 0;
-    int two = 0;
-    int eight = 0;
-
-    foreach (var s in stats)
-    {
-      if (s.WinStats == 7)
-        seven++;
-
-      else if (s.WinStats > 7)
-        two++;
-      else
-        eight++;
-    }
-
-    float twoP = (two * 100f) / total;
-    float sevenP = (seven * 100f) / total;
-    float eightP = (eight * 100f) / total;
-
-    TwoSixPercentage.text = twoP.ToString("0") + "%";
-    SevenPercentage.text = sevenP.ToString("0") + "%";
-    EightTwelvePercentage.text = eightP.ToString("0") + "%";
-    TotalRounds.text = "Calculated from last " + total.ToString() + " rounds.";
-
-
-  }
-
-
-
-
-  private List<DiceStatsPrefab> GetStats()
-  {
-    List<DiceStatsPrefab> list = new List<DiceStatsPrefab>();
-
-    for (int i = 0; i < StatsParent.childCount; i++)
-    {
-      var s = StatsParent.GetChild(i).GetComponent<DiceStatsPrefab>();
-      if (s != null && s.gameObject.activeSelf)
-        list.Add(s);
-    }
-
-    return list;
-  }
-
   internal void setCoins(bool istrue)
   {
     chipPanel.SetActive(istrue);
@@ -1314,53 +916,13 @@ public class UiManager : MonoBehaviour
     Canclebtn.gameObject.SetActive(canc);
     Undubtn.gameObject.SetActive(undo);
   }
-  #endregion
 
 
-  internal void HideBetLimitPanel()
+  internal void SetSinglePlayerUi(bool single)
   {
-    isOpen = false;
-
-    Transform target = isOpen ? openPosition : closedPosition;
-
-    BetLimitPanel.transform.DOMove(target.position, 0.3f)
-        .SetEase(isOpen ? Ease.OutCubic : Ease.InCubic);
-  }
-  void ToggleBetLimitPanel()
-  {
-    isOpen = !isOpen;
-
-    Transform target = isOpen ? openPosition : closedPosition;
-
-    BetLimitPanel.transform.DOMove(target.position, 0.3f)
-        .SetEase(isOpen ? Ease.OutCubic : Ease.InCubic);
-  }
-  void OnMultiplayerMode()
-  {
-    socketManager.SendModeSelection("multiple");
-    ToggleBetLimitPanel();
-    if (LeaderBoard) LeaderBoard.SetActive(true);
-    Diamond.SetActive(false);
-    StartBtn.gameObject.SetActive(false);
-    gameManager.isSinglePlayer = false;
-    gameManager.ResetAllBetOptions();
-    gameManager.ResetTimer();
-    SetNetBetPanel(0);
-    SinglePlayerBtn.image.sprite = NotSelectedSprite;
-    MultiplayerBtn.image.sprite = SelectedSprite;
-  }
-  void OnSinglePlayerMode()
-  {
-    socketManager.SendModeSelection("single");
-    ToggleBetLimitPanel();
-    if (LeaderBoard) LeaderBoard.SetActive(false);
-    Diamond.SetActive(true);
-    StartBtn.gameObject.SetActive(true);
-    gameManager.isSinglePlayer = true;
-    gameManager.ResetAllBetOptions();
-    SetNetBetPanel(0);
-    SinglePlayerBtn.image.sprite = SelectedSprite;
-    MultiplayerBtn.image.sprite = NotSelectedSprite;
+    if (LeaderBoard) LeaderBoard.SetActive(!single);
+    Diamond.SetActive(single);
+    StartBtn.gameObject.SetActive(single);
   }
 
   internal void SetBetActionButtons(bool interactable)
@@ -1380,17 +942,4 @@ public class UiManager : MonoBehaviour
   }
 
 
-}
-// Add this class anywhere in your file
-[System.Serializable]
-public class DiceData
-{
-  public int dice1;
-  public int dice2;
-  public bool isBonus;
-}
-[System.Serializable]
-public class StatsList
-{
-  [SerializeField] internal List<DiceStatsPrefab> row = new List<DiceStatsPrefab>();
 }

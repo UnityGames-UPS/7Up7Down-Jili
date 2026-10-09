@@ -100,6 +100,16 @@ public class DiceResultmanager : MonoBehaviour
         }
     }
 
+    // Shows a result without rolling; ignored mid-roll so it cannot spoil the reveal
+    public void ShowResult(Sprite firstDice, Sprite secondDice)
+    {
+        if (IsInvoking("AnimationProcess")) return;
+        DiceOneResult.sprite = firstDice;
+        DiceTwoResult.sprite = secondDice;
+        DiceOneResult.gameObject.SetActive(true);
+        DiceTwoResult.gameObject.SetActive(true);
+    }
+
     public void PauseAnimation()
     {
         if (currentAnimationState == ImageState.PLAYING)

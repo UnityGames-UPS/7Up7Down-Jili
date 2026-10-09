@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,8 +13,6 @@ public class StatsPrefab : MonoBehaviour
     [SerializeField] internal Image DiceOne;
     [SerializeField] internal Image DiceTwo;
     [SerializeField] internal GameObject Star;
-    internal int WinStats;
-    internal string winner;
 
     internal void SetData(string diceTotal, Sprite diceOne, Sprite diceTwo, Sprite colorindex, bool isStar, bool isHighLited)
     {
@@ -27,19 +23,5 @@ public class StatsPrefab : MonoBehaviour
         if (Star) Star.SetActive(isStar);
 
         WinColor.sprite = colorindex;
-        // WinStats = int.Parse(diceTotal);
     }
-    internal void CopyFrom(StatsPrefab other)
-    {
-        DiceTotal.text = other.DiceTotal.text;
-        DiceOne.sprite = other.DiceOne.sprite;
-        DiceTwo.sprite = other.DiceTwo.sprite;
-
-        HighBg.SetActive(other.HighBg.activeSelf);
-        Star.SetActive(other.Star.activeSelf);
-
-        WinColor.sprite = other.WinColor.sprite;
-    }
-
 }
-

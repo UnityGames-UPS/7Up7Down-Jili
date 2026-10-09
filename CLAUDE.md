@@ -72,8 +72,10 @@ SocketIOManager  (Assets/Scripts/APIs/SocketIOManager.cs)   — transport + all 
    ├── GameManager (Assets/Scripts/Functionality/GameManager.cs) — round flow, bets, chips, payouts
    │      ├── BetOptionView (Assets/Scripts/Prefab/BetOptionView.cs) — one per bet spot; no manager refs, raises `Clicked`
    │      ├── ChipManager (Assets/Scripts/Functionality/ChipManager.cs) — chip pool (`GenericObjectPool<Chip>`), sprites, all chip animation tuning
-   │      └── BonusManager (Assets/Scripts/Functionality/BonusManager.cs) — bonus badge pool (`GenericObjectPool<BonusPrefab>`) and reveal tuning
-   ├── UiManager   (Assets/Scripts/UI/UIManager.cs)          — popups, menus, stats road map, history
+   │      ├── BonusManager (Assets/Scripts/Functionality/BonusManager.cs) — bonus badge pool (`GenericObjectPool<BonusPrefab>`) and reveal tuning
+   │      ├── LevelSelector (Assets/Scripts/UI/LevelSelector.cs) — sliding level + single/multiple mode panel; mode UI changes only on the `PLAYER_MODE` reply
+   │      └── RoadMapManager (Assets/Scripts/Functionality/RoadMapManager.cs) — result list, top stat strip, both roadmap grids, percentages, its own fading popup
+   ├── UiManager   (Assets/Scripts/UI/UIManager.cs)          — popups, menus, history
    ├── StartupPage (Assets/Scripts/Functionality/StartupPage.cs)— one-way splash/loading shown over the running game
    ├── AudioManager, DiceResultmanager, ImageAnimation, OrientationChange
    └── JSFunctCalls (Assets/Scripts/JS/JSFunctCalls.cs)      — C# ↔ browser bridge
@@ -124,7 +126,8 @@ Where the client currently differs from the spec (verify before relying on eithe
    `SetInitialData()` + `SetOptionData()`, emits `JOIN_LEVEL` for `levels[0]` (the client joins
    the first level itself; there is no lobby) and posts `OnEnter` to the host page.
 2. `JOIN_LEVEL` ack → `OnRoomEnter` → `SetCoinData()` (chip denominations for that level),
-   rule panel, leaderboards, and lets `StartupPage` finish loading. Rounds run muted behind the
+   rule panel, `SetStats()` (road map from `stats`, last result shown on the dice), leaderboards,
+   and lets `StartupPage` finish loading. Rounds run muted behind the
    startup page until it is dismissed (Continue, or automatically if "don't show again" is saved).
 3. `game:round_start` → `GameManager.OnGameLoopStart()` clears chips and bonus badges, resets
    option UI, fires "please bet now", auto-repeats if `isAuto`.
@@ -135,9 +138,19 @@ Where the client currently differs from the spec (verify before relying on eithe
    `game:bonus` → `OnBonus()` → Extra Pay banner after Bet Locked, badges revealed at
    `extraPayRevealAt`. `PlayRoundBanner` owns the three banners and the dim behind them.
 5. `game:dice_result` → `ManageResult()` hides the banners, runs the dice animation, then `ManageAfterResult()`
-   highlights the winning option(s) and pushes the result into the stats road map.
-6. `game:cashout` → `ManagePayouts()` → chips animate from options to winners, balances update,
+   highlights the winning option(s). The result is held as `pendingStat`.
+6. `game:cashout` → `ManagePayouts()` → the result is added to the road map (or at the next
+   `game:round_start` if no cashout came), chips animate from options to winners, balances update,
    leaderboards refresh, net-bet panel resets.
+
+### Road map
+
+`RoadMapManager` keeps the results oldest-first (seeded from the `JOIN_LEVEL` `stats`, capped at
+rows × columns) and redraws every view from that list. All-results grid: oldest at top-left, filling
+down each column then right. Streak grid: newest streak in the left column, newest result on top; a
+streak is consecutive results in the same main category and spills into the next column when the
+column is full. A live result's `isBonus` is derived on the client (a winning option had a
+`game:bonus` multiplier) because `game:dice_result` does not carry it.
 
 ### Bet option indexing (easy to get wrong)
 
@@ -160,8 +173,16 @@ Both serializers are in play and are not interchangeable:
 
 Each inbound event has its own DTO (`RoundStartEvent`, `BettingTimerEvent`, `DiceResultEvent`, …)
 and each ack is a `Reply<TPayload>` (`PlaceBetPayload`, `UndoBetPayload`, …), built from the
-captured samples in `Assets/Scripts/JSON/`. `CashoutEvent`, `HomePayload` and the `PLAYER_MODE`
-reply (read as `JoinLevelPayload`) have no captured sample yet and only mirror what the handlers read.
+captured samples in `Assets/Scripts/JSON/`. `CashoutEvent` and `HomePayload` have no captured
+sample yet and only mirror what the handlers read. The `PLAYER_MODE` reply (`ModeChangePayload`)
+carries no `stats`, `bets` or `leaderboards`; `roundState` is `null` when switching to `multiple`.
+
+### Single mode
+
+`GameManager.ApplyPlayerMode` resets the table on a confirmed switch. Single mode has no countdown
+until the player presses Start (`StartRound` → `START_GAME`), which begins a timed round; a timed
+`game:round_start` / `game:betting_timer` before that is treated as stale (`IsStaleTimedEvent`:
+logged as an error and ignored). The round ends at payout (`FinishSingleRound`), which reopens betting.
 
 ### Base template lineage
 

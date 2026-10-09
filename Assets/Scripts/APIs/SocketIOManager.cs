@@ -45,6 +45,8 @@ public class SocketIOManager : MonoBehaviour
   private int missedPongs = 0;
   private const int MaxMissedPongs = 5;
   internal bool loadingPageLoading = false;
+  // Level picked in the selector, joined once HOME has replied
+  private string pendingLevel;
   internal bool NormalStart = false;
   internal bool DontDisplayDisconected = false;
   private Coroutine PingRoutine; //Back2 end
@@ -232,6 +234,7 @@ public class SocketIOManager : MonoBehaviour
     gameManager.OnGameLoaded();
     LogEvent(logs.timer, "[game:betting_timer]", data);
     var timer = JsonUtility.FromJson<BettingTimerEvent>(data);
+    if (gameManager.IsStaleTimedEvent("game:betting_timer", timer.roundId, timer.bettingEndTime)) return;
     gameManager.SyncBetTimer(timer.roundId, timer.serverTime, timer.bettingEndTime);
   }
   private void OnDiceResult(string data)
@@ -515,7 +518,7 @@ public class SocketIOManager : MonoBehaviour
 
   internal void SendModeSelection(string mode)
   {
-    StartCoroutine(gameManager.ShowLoadingPage("Switch Mode"));
+    gameManager.ShowSwitchLoadingPage("Switch Mode");
     SendRequest("PLAYER_MODE", new PlayerModePayload { playerMode = mode }, OnModeChange, logs.requests);
   }
 
@@ -534,6 +537,14 @@ public class SocketIOManager : MonoBehaviour
   internal void SendDouble() => SendRequest("DOUBLE_BET", new EmptyPayload(), OnDouble, logs.betActions);
 
   internal void SendStart() => SendRequest("START_GAME", new EmptyPayload(), OnStart, logs.requests);
+
+  // currentRoom only changes once the server confirms the join
+  internal void SwitchLevel(string level)
+  {
+    pendingLevel = level;
+    gameManager.ShowSwitchLoadingPage("Changing Game Hall..");
+    SendHome();
+  }
 
   internal void SendHome()
   {
@@ -558,9 +569,10 @@ public class SocketIOManager : MonoBehaviour
     LogEvent(logs.requests, "[HOME] reply:", json);
     var reply = JsonUtility.FromJson<Reply<HomePayload>>(json);
     playerdata.balance = reply.payload.balance;
-    StartCoroutine(gameManager.ShowLoadingPage("Changing Game Hall.."));
+    gameManager.ShowSwitchLoadingPage("Changing Game Hall..");
     gameManager.GamePage.SetActive(true);
-    EmitJoinLevel(gameManager.currentRoom);
+    EmitJoinLevel(pendingLevel ?? gameManager.currentRoom);
+    pendingLevel = null;
   }
 
   void OnHistory(string json)
@@ -572,6 +584,8 @@ public class SocketIOManager : MonoBehaviour
   void OnStart(string json)
   {
     LogEvent(logs.bets, "[START_GAME] reply:", json);
+    var reply = JsonUtility.FromJson<Reply<ReplyPayload>>(json);
+    if (!reply.success) gameManager.OnStartRejected(reply.payload?.message);
   }
 
   void OnDouble(string json)
@@ -600,7 +614,7 @@ public class SocketIOManager : MonoBehaviour
       gameManager.OnBetsRepeated(reply.payload.bets);
       ApplyBalance(reply.payload.balance);
       gameManager.currentTotalBet = reply.payload.totalBet;
-      if (gameManager.isAuto && gameManager.isSinglePlayer) SendStart();
+      if (gameManager.isAuto && gameManager.isSinglePlayer) gameManager.StartRound();
     }
     else
     {
@@ -643,23 +657,27 @@ public class SocketIOManager : MonoBehaviour
       return;
     }
     roomData = reply.payload;
+    if (!string.IsNullOrEmpty(roomData.level)) gameManager.currentRoom = roomData.level;
     startupPage.SetCanLoadFull(true);
     gameManager.SetCoinData();
-    uiManager.SetgameRulePanel();
+    gameManager.SetStats(roomData.stats);
     gameManager.SetOtherplayerData(roomData.leaderboards);
   }
 
-  // Reply shape is still being agreed with backend; read as a JOIN_LEVEL reply until then
   void OnModeChange(string json)
   {
     LogEvent(logs.requests, "[PLAYER_MODE] reply:", json);
-    var reply = JsonUtility.FromJson<Reply<JoinLevelPayload>>(json);
-    if (reply.success == false) return;
+    var reply = JsonUtility.FromJson<Reply<ModeChangePayload>>(json);
+    if (reply.success == false)
+    {
+      Debug.LogError("[PLAYER_MODE] failed: " + json);
+      return;
+    }
 
-    roomData = reply.payload;
-    gameManager.SetCoinData();
-    uiManager.SetgameRulePanel();
-    gameManager.SetOtherplayerData(roomData.leaderboards);
+    roomData.roomId = reply.payload.roomId;
+    roomData.oldRoomId = reply.payload.oldRoomId;
+    roomData.playerCount = reply.payload.playerCount;
+    gameManager.ApplyPlayerMode(reply.payload);
   }
 
   // Broadcast for every bet in the room, the player's own included
@@ -678,8 +696,9 @@ public class SocketIOManager : MonoBehaviour
     }
     NormalStart = true;
     LogEvent(logs.round, "[game:round_start]", json);
-    gameManager.OnGameLoopStart();
     var round = JsonUtility.FromJson<RoundStartEvent>(json);
+    if (gameManager.IsStaleTimedEvent("game:round_start", round.roundId, round.bettingEndTime)) return;
+    gameManager.OnGameLoopStart();
     gameManager.SyncBetTimer(round.roundId, round.serverTime, round.bettingEndTime);
   }
 
@@ -790,6 +809,25 @@ public class JoinLevelPayload : ReplyPayload
 }
 
 [Serializable]
+public class ModeChangePayload : ReplyPayload
+{
+  public string roomId;
+  public string oldRoomId;
+  // "single" or "multiple"
+  public string playerMode;
+  public int playerCount;
+  public RoundState roundState;
+}
+
+[Serializable]
+public class DiceData
+{
+  public int dice1;
+  public int dice2;
+  public bool isBonus;
+}
+
+[Serializable]
 public class RoundState
 {
   public string roundId;
@@ -797,6 +835,7 @@ public class RoundState
   public long bettingEndTime;
   public long serverTime;
   public int timeRemaining;
+  public bool isBettingOpen;
   public string phase;
 }
 
