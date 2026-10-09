@@ -1,0 +1,109 @@
+{
+  "success": true,
+  "payload": {
+    "roomId": "room-d4b26408-3928-414c-8995-8f9997168ef4",
+    "oldRoomId": "room-1e43979d-5dbe-4641-bf8d-3b9402a6f423",
+    "playerCount": 2,
+    "bets": [
+      {
+        "username": "maahul",
+        "betId": "b646a81f-d96d-42cf-a06b-22d913877a13",
+        "betType": "main_bets",
+        "betOption": "number_2_6",
+        "amount": 10
+      },
+      {
+        "username": "maahul",
+        "betId": "b62f9b49-1fe8-4c32-9da3-391250920a85",
+        "betType": "main_bets",
+        "betOption": "number_2_6",
+        "amount": 10
+      }
+    ],
+    "level": "level_1",
+    "stats": [
+      "{\"dice1\":0,\"dice2\":0,\"isBonus\":true}",
+      "{\"dice1\":0,\"dice2\":0,\"isBonus\":true}",
+      "{\"dice1\":0,\"dice2\":0,\"isBonus\":true}",
+      "{\"dice1\":0,\"dice2\":0,\"isBonus\":true}",
+      "{\"dice1\":0,\"dice2\":0,\"isBonus\":true}",
+      "{\"dice1\":0,\"dice2\":0,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":6,\"isBonus\":true}",
+      "{\"dice1\":3,\"dice2\":4,\"isBonus\":false}",
+      "{\"dice1\":3,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":4,\"dice2\":5,\"isBonus\":true}",
+      "{\"dice1\":1,\"dice2\":4,\"isBonus\":false}",
+      "{\"dice1\":4,\"dice2\":5,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":1,\"dice2\":1,\"isBonus\":false}",
+      "{\"dice1\":2,\"dice2\":1,\"isBonus\":false}",
+      "{\"dice1\":4,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":3,\"dice2\":6,\"isBonus\":false}",
+      "{\"dice1\":6,\"dice2\":4,\"isBonus\":false}",
+      "{\"dice1\":1,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":3,\"dice2\":2,\"isBonus\":true}",
+      "{\"dice1\":4,\"dice2\":6,\"isBonus\":true}",
+      "{\"dice1\":4,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":6,\"dice2\":1,\"isBonus\":false}",
+      "{\"dice1\":1,\"dice2\":1,\"isBonus\":false}",
+      "{\"dice1\":6,\"dice2\":3,\"isBonus\":true}",
+      "{\"dice1\":4,\"dice2\":3,\"isBonus\":false}",
+      "{\"dice1\":2,\"dice2\":3,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":3,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":5,\"isBonus\":true}",
+      "{\"dice1\":1,\"dice2\":3,\"isBonus\":false}",
+      "{\"dice1\":6,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":6,\"isBonus\":true}",
+      "{\"dice1\":4,\"dice2\":3,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":1,\"isBonus\":true}",
+      "{\"dice1\":4,\"dice2\":2,\"isBonus\":true}",
+      "{\"dice1\":6,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":2,\"dice2\":4,\"isBonus\":false}",
+      "{\"dice1\":1,\"dice2\":5,\"isBonus\":false}",
+      "{\"dice1\":6,\"dice2\":5,\"isBonus\":true}",
+      "{\"dice1\":3,\"dice2\":1,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":1,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":6,\"isBonus\":false}",
+      "{\"dice1\":4,\"dice2\":4,\"isBonus\":false}",
+      "{\"dice1\":3,\"dice2\":5,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":5,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":2,\"isBonus\":true}",
+      "{\"dice1\":5,\"dice2\":1,\"isBonus\":false}",
+      "{\"dice1\":3,\"dice2\":2,\"isBonus\":false}",
+      "{\"dice1\":3,\"dice2\":3,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":6,\"isBonus\":false}",
+      "{\"dice1\":5,\"dice2\":6,\"isBonus\":true}",
+      "{\"dice1\":1,\"dice2\":4,\"isBonus\":true}",
+      "{\"dice1\":5,\"dice2\":1,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":2,\"isBonus\":true}",
+      "{\"dice1\":2,\"dice2\":3,\"isBonus\":false}",
+      "{\"dice1\":4,\"dice2\":4,\"isBonus\":true}",
+      "{\"dice1\":6,\"dice2\":6,\"isBonus\":true}",
+      "{\"dice1\":1,\"dice2\":3,\"isBonus\":true}",
+      "{\"dice1\":3,\"dice2\":1,\"isBonus\":true}"
+    ],
+    "leaderboards": {
+      "winners": [
+        {
+          "username": "maahul",
+          "totalWins": 10,
+          "rank": 1
+        }
+      ]
+    },
+    "roundState": {
+      "roundId": "876da32f-2fe2-4818-9f7b-70506cd126fa",
+      "dice1": 0,
+      "dice2": 0,
+      "bonus": {
+        "number_7": 4,
+        "s_9": 2,
+        "number_8_12": 2,
+        "s_8": 2,
+        "number_2_6": 2
+      },
+      "phase": "dealing"
+    }
+  }
+}
