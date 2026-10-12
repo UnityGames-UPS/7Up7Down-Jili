@@ -16,13 +16,26 @@ public class BonusManager : GenericObjectPool<BonusPrefab>
   // order staggers badges revealed in the same batch
   internal void Show(Transform anchor, int multiplier, int order, bool isMainBet)
   {
+    BonusPrefab badge = Place(anchor, isMainBet);
+    badge.Hide();
+
+    DOVirtual.DelayedCall(order * spawnStagger, () => badge.Show(multiplier, settings)).SetTarget(badge);
+  }
+
+  // Already revealed, for a round joined after its reveal
+  internal void ShowSettled(Transform anchor, int multiplier, bool isMainBet) =>
+    Place(anchor, isMainBet).ShowSettled(multiplier);
+
+  BonusPrefab Place(Transform anchor, bool isMainBet)
+  {
+    // One badge per option: a repeated bonus replaces the first
+    if (badgeByAnchor.TryGetValue(anchor, out BonusPrefab old)) ReturnToPool(old);
+
     BonusPrefab badge = GetFromPool();
     badge.transform.position = anchor.position;
     badge.transform.localScale = Vector3.one * (isMainBet ? mainBetScale : 1f);
-    badge.Hide();
     badgeByAnchor[anchor] = badge;
-
-    DOVirtual.DelayedCall(order * spawnStagger, () => badge.Show(multiplier, settings)).SetTarget(badge);
+    return badge;
   }
 
   // Once the result is known: a winning badge plays out, a losing one shrinks away
@@ -54,19 +67,19 @@ public class BonusManager : GenericObjectPool<BonusPrefab>
 public class BonusAnimationSettings
 {
   [Header("Reveal")]
-  public float fadeInDuration = 0.1f;
-  public float textPopDuration = 0.25f;
-  public Ease textPopEase = Ease.OutBack;
+  [SerializeField] internal float fadeInDuration = 0.1f;
+  [SerializeField] internal float textPopDuration = 0.25f;
+  [SerializeField] internal Ease textPopEase = Ease.OutBack;
 
   [Header("Lost")]
-  public float loseShrinkDuration = 0.25f;
+  [SerializeField] internal float loseShrinkDuration = 0.25f;
 
   [Header("Won")]
-  public int glowLoops = 2;
-  public int rotationStartFrame;
-  public int rotationEndFrame;
+  [SerializeField] internal int glowLoops = 2;
+  [SerializeField] internal int rotationStartFrame;
+  [SerializeField] internal int rotationEndFrame;
   // Total turn of the text between those two frames
-  public Vector3 textRotation = new Vector3(0f, 720f, 0f);
-  public int scaleDownStartFrame;
-  public float textScaleDownDuration = 0.15f;
+  [SerializeField] internal Vector3 textRotation = new Vector3(0f, 720f, 0f);
+  [SerializeField] internal int scaleDownStartFrame;
+  [SerializeField] internal float textScaleDownDuration = 0.15f;
 }

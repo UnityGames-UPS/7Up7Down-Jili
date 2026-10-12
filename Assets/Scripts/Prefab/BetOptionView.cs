@@ -292,18 +292,18 @@ public class BetOptionView : MonoBehaviour
 public class WinAnimationSettings
 {
   [Header("Border In")]
-  public float borderStartScale = 1.3f;
-  public float borderInDuration = 0.35f;
-  public Ease borderInEase = Ease.OutQuad;
+  [SerializeField] internal float borderStartScale = 1.3f;
+  [SerializeField] internal float borderInDuration = 0.35f;
+  [SerializeField] internal Ease borderInEase = Ease.OutQuad;
 
   [Header("Border Pulse")]
-  [Range(0f, 1f)] public float pulseMinAlpha = 0f;
-  public float pulseDuration = 0.5f;
+  [Range(0f, 1f)] [SerializeField] internal float pulseMinAlpha = 0f;
+  [SerializeField] internal float pulseDuration = 0.5f;
 
   [Header("Win Text Pop")]
-  public float textPopDuration = 0.3f;
-  public Ease textPopEase = Ease.OutBack;
+  [SerializeField] internal float textPopDuration = 0.3f;
+  [SerializeField] internal Ease textPopEase = Ease.OutBack;
   // Played when the win image animation finishes
-  public float textHideDuration = 0.2f;
-  public Ease textHideEase = Ease.InBack;
+  [SerializeField] internal float textHideDuration = 0.2f;
+  [SerializeField] internal Ease textHideEase = Ease.InBack;
 }

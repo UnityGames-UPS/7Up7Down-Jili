@@ -137,7 +137,7 @@ TextureImporter:
       name: coins_0
       rect:
         serializedVersion: 2
-        x: 45
+        x: 46
         y: 583
         width: 129
         height: 129
@@ -182,7 +182,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 46
-        y: 408
+        y: 407
         width: 129
         height: 129
       alignment: 0
@@ -204,7 +204,7 @@ TextureImporter:
       rect:
         serializedVersion: 2
         x: 256
-        y: 408
+        y: 407
         width: 129
         height: 129
       alignment: 0

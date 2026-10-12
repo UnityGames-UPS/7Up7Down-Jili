@@ -6,7 +6,7 @@ using UnityEngine.UI;
 // The purple border shared by leaderboard avatars and bet options
 public static class BorderHighlight
 {
-  public static void Show(Image border, BorderHighlightSettings settings)
+  internal static void Show(Image border, BorderHighlightSettings settings)
   {
     if (!border) return;
 
@@ -27,7 +27,7 @@ public static class BorderHighlight
   }
 
   // Fades out from wherever the border is, even part-way through its scale down
-  public static void Hide(Image border, BorderHighlightSettings settings, Action onHidden = null)
+  internal static void Hide(Image border, BorderHighlightSettings settings, Action onHidden = null)
   {
     if (!border || !border.gameObject.activeSelf) return;
 
@@ -40,7 +40,7 @@ public static class BorderHighlight
     });
   }
 
-  public static void HideInstant(Image border)
+  internal static void HideInstant(Image border)
   {
     if (!border) return;
 
@@ -62,14 +62,14 @@ public static class BorderHighlight
 public class BorderHighlightSettings
 {
   [Header("In")]
-  public float startScale = 1.2f;
-  public float inDuration = 0.3f;
-  public Ease inEase = Ease.OutQuad;
+  [SerializeField] internal float startScale = 1.2f;
+  [SerializeField] internal float inDuration = 0.3f;
+  [SerializeField] internal Ease inEase = Ease.OutQuad;
 
   [Header("Pulse")]
-  [Range(0f, 1f)] public float pulseMinAlpha = 0f;
-  public float pulseDuration = 0.5f;
+  [Range(0f, 1f)] [SerializeField] internal float pulseMinAlpha = 0f;
+  [SerializeField] internal float pulseDuration = 0.5f;
 
   [Header("Out")]
-  public float outDuration = 0.2f;
+  [SerializeField] internal float outDuration = 0.2f;
 }

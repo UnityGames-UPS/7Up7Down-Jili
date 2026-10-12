@@ -47,6 +47,13 @@ Claude writes most of the game code here, so keep it easy for both of us to read
 - Prefer a clear name over a comment. If a method needs a paragraph to explain, split it.
 - Delete dead code instead of commenting it out — git has the history.
 - Match the surrounding naming/idiom unless the task is to refactor that file.
+- **No `public` members.** Inspector fields are `[SerializeField] private` (or `internal` when another
+  script reads them); methods are `private`, or `internal` when called from another script. Fields
+  are camelCase. Exceptions that must stay `public`: the fields of JSON DTOs (both serializers only
+  see public fields) and interface implementations (`OnPointerDown`). Methods the host page calls
+  through `SendMessage` (`ReceiveAuthToken`, `CloseGame`, `OnFocusChanged`) do not need `public`.
+- **No Inspector `onClick` / UnityEvent wiring.** Bind buttons in code (`UIManager.Bind`) so every
+  handler is findable from the scripts.
 
 ## Build / run
 
@@ -75,11 +82,19 @@ SocketIOManager  (Assets/Scripts/APIs/SocketIOManager.cs)   — transport + all 
    │      ├── BonusManager (Assets/Scripts/Functionality/BonusManager.cs) — bonus badge pool (`GenericObjectPool<BonusPrefab>`) and reveal tuning
    │      ├── LevelSelector (Assets/Scripts/UI/LevelSelector.cs) — sliding level + single/multiple mode panel; mode UI changes only on the `PLAYER_MODE` reply
    │      └── RoadMapManager (Assets/Scripts/Functionality/RoadMapManager.cs) — result list, top stat strip, both roadmap grids, percentages, its own fading popup
-   ├── UiManager   (Assets/Scripts/UI/UIManager.cs)          — popups, menus, history
+   ├── UIManager   (Assets/Scripts/UI/UIManager.cs)          — side menu, info page, the three popups, chip selector, bet action buttons
    ├── StartupPage (Assets/Scripts/Functionality/StartupPage.cs)— one-way splash/loading shown over the running game
    ├── AudioManager, DiceResultmanager, ImageAnimation, OrientationChange
    └── JSFunctCalls (Assets/Scripts/JS/JSFunctCalls.cs)      — C# ↔ browser bridge
 ```
+
+### Popups and info page
+
+`Canvas/BG/Popups` is the last sibling, so it draws above GamePage, LoadingPage and StartupPage. It
+holds only Quit, Reconnect and Disconnect; `UIManager.SetPopup` keeps the root active while any of
+the three is. The info page lives under GamePage and is toggled on its own, never through the
+popup root. Its betting-limit rows all show the current level's `max_bet_limit`, refreshed in
+`GameManager.SetCoinData` on every `JOIN_LEVEL` ack.
 
 ### Socket protocol
 
@@ -89,7 +104,7 @@ Namespace `playground-multiplayer` on the SocketManager; transport forced to Web
 **Inbound** (`gameSocket.On<string>(...)` in `SetupSocketManager`):
 `game:init`, `game:round_start`, `game:betting_timer`, `game:dice_result`,
 `game:cashout`, `game:bet_placed` (every bet in the room, the player's own included), `game:bonus`, `game:lobby_count`,
-`balance:sync`, `pong`, `socketState`, `internalError`, `alert`, `AnotherDevice`.
+`balance:sync`, `pong`, `socketState`, `internalError`, `alert`. (`AnotherDevice` is not handled.)
 
 **Outbound**: almost everything is a single `"request"` emit carrying `{type, payload}` JSON, with
 the reply delivered through `ExpectAcknowledgement<string>` rather than a separate event.
@@ -104,7 +119,7 @@ Types: `JOIN_LEVEL`, `PLAYER_MODE`, `PLACE_BET`, `UNDO_BET`, `REPEAT_BET`, `CANC
 `Backend.md` is the backend team's spec for this game (variant `ML-7U7DJ`) and the authority for
 game-specific events, actions and bet keys. It only lists what is specific to 7 Up 7 Down —
 studio-common events (`game:init`, `balance:sync`, `game:lobby_count`, `pong`, `socketState`,
-`internalError`, `alert`, `AnotherDevice`) are not in it but still apply and must keep working.
+`internalError`, `alert`) are not in it but still apply and must keep working.
 
 Server-defined phase order: `game:round_start` (+ `game:bonus`) → `game:betting_timer` ticks →
 `game:round_end` (**betting closed**, "No More Bets") → `game:dice_result` (dice + wins).
@@ -127,7 +142,7 @@ Where the client currently differs from the spec (verify before relying on eithe
    the first level itself; there is no lobby) and posts `OnEnter` to the host page.
 2. `JOIN_LEVEL` ack → `OnRoomEnter` → `SetCoinData()` (chip denominations for that level),
    rule panel, `SetStats()` (road map from `stats`, last result shown on the dice), leaderboards,
-   and lets `StartupPage` finish loading. Rounds run muted behind the
+   `RestoreRound()` (see "Mid-round join"), and lets `StartupPage` finish loading. Rounds run muted behind the
    startup page until it is dismissed (Continue, or automatically if "don't show again" is saved).
 3. `game:round_start` → `GameManager.OnGameLoopStart()` clears chips and bonus badges, resets
    option UI, fires "please bet now", auto-repeats if `isAuto`.
@@ -138,10 +153,22 @@ Where the client currently differs from the spec (verify before relying on eithe
    `game:bonus` → `OnBonus()` → Extra Pay banner after Bet Locked, badges revealed at
    `extraPayRevealAt`. `PlayRoundBanner` owns the three banners and the dim behind them.
 5. `game:dice_result` → `ManageResult()` hides the banners, runs the dice animation, then `ManageAfterResult()`
-   highlights the winning option(s). The result is held as `pendingStat`.
+   (`RollDuration + resultHold` later) highlights the winning option(s) and resolves the bonus badges.
+   The winning badge's sequence (~6.2 s) is longer than `cashoutInterval`, so it must start here, not at cashout.
+   The result is held as `pendingStat`.
 6. `game:cashout` → `ManagePayouts()` → the result is added to the road map (or at the next
    `game:round_start` if no cashout came), chips animate from options to winners, balances update,
    leaderboards refresh, net-bet panel resets.
+
+### Mid-round join
+
+The `JOIN_LEVEL` ack carries `bets` and `roundState` (`phase`: `betting`, `bonus`, `dice_result`,
+`cashout`; samples in `Assets/Scripts/JSON/JoinLevelAck/`). `GameManager.RestoreRound` resets the
+table and rebuilds it with no animation, behind the startup / switch page: bets as reference chips,
+timer synced (`betting`), table locked with settled bonus badges (`bonus`), dice shown without a
+roll and winners lit (`dice_result`, the live `game:cashout` then pays out normally), or a clean
+locked table (`cashout`, `settledOnJoin`). The current round's dice are not in `stats` yet, so they
+become `pendingStat`. Only `betting` carries timestamps; other phases just wait for the next event.
 
 ### Road map
 
@@ -201,7 +228,7 @@ JS bridge.
 The host injects `{socketURL, token, nameSpace}` back via `SendMessage('SocketManager', 'ReceiveAuthToken', …)`.
 
 Browser focus/visibility is bridged through `RegisterVisibilityChangeListener` →
-`UiManager.OnFocusChanged("1"/"0")`, which mutes audio and calls
+`UIManager.OnFocusChanged("1"/"0")`, which mutes audio and calls
 `SocketIOManager.HandleFocusChange`. Backgrounding for more than `maxBackgroundTime` (60s)
 deliberately closes the socket and shows the disconnection popup.
 
@@ -218,8 +245,6 @@ Do not "fix" these silently as drive-by changes; flag them first.
 - `DistributePayouts` recovers the old balance by **string-parsing the balance label** (stripping
   non-digits from `"Rs..."`) to compute `currentWin`; `UpdatePlayerbalance` writes that `"Rs"` prefix.
   Any formatting change to the balance text breaks win calculation.
-- Several UI bindings in `UiManager.Start()` are mis-wired copy-paste (`Music_button` and
-  `MusicMute_button` both call `ToggleSound()`).
 - `BetOptionView` keeps its own running bet totals (`PlayerBet` / `OpponentBet`) in parallel with
   the server's — they are client-side sums of acks and broadcasts, not server truth.
 

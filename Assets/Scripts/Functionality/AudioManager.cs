@@ -1,197 +1,124 @@
-
+using DG.Tweening;
 using UnityEngine;
-using System;
+using UnityEngine.Serialization;
 
 public class AudioManager : MonoBehaviour
 {
-    [SerializeField] private AudioSource bg_adudio;
-    [SerializeField] internal AudioSource audioPlayer_wl;
-    [SerializeField] internal AudioSource audioPlayer_button;
-    [SerializeField] internal AudioSource audioBet_button;
-    [SerializeField] internal AudioSource audioWin;
+  [Header("Sources")]
+  [FormerlySerializedAs("bg_adudio")]
+  [SerializeField] private AudioSource musicSource;
+  [FormerlySerializedAs("audioPlayer_wl")]
+  [SerializeField] private AudioSource sfxSource;
+  // Its own source so the fade never touches the other effects
+  [FormerlySerializedAs("audioPlayer_button")]
+  [SerializeField] private AudioSource diceSource;
 
+  [Header("Clips")]
+  [SerializeField] private AudioClip bgMusic;
+  [SerializeField] private AudioClip placeBetsNow;
+  [SerializeField] private AudioClip betLocked;
+  [SerializeField] private AudioClip extraPay;
+  [SerializeField] private AudioClip diceShaking;
+  [SerializeField] private AudioClip button;
+  [SerializeField] private AudioClip chipSelector;
+  [SerializeField] private AudioClip chipPlace;
+  [SerializeField] private AudioClip coinWin;
 
-    [SerializeField] private AudioClip[] clips;
-    [SerializeField] private AudioClip[] Voiceclips;
+  [Header("Dice")]
+  // Seconds of fade at the end of the roll; the clip is longer than the animation
+  [SerializeField] private float diceFadeOut = 0.6f;
 
-    private void Start()
-    {
-        if (bg_adudio) bg_adudio.Play();
-        //  audioPlayer_button.clip = clips[0];
-        audioBet_button.clip = clips[3];
-        audioWin.clip = clips[4];
+  private Tween diceFade;
 
-    }
+  private void Start()
+  {
+    if (!musicSource || !bgMusic) return;
+    musicSource.clip = bgMusic;
+    musicSource.loop = true;
+    musicSource.Play();
+  }
 
+  internal void PlayButton() => PlayOneShot(button);
+  internal void PlayChipSelector() => PlayOneShot(chipSelector);
+  internal void PlayChipPlace() => PlayOneShot(chipPlace);
+  internal void PlayBetNow() => PlayOneShot(placeBetsNow);
+  internal void PlayBetLocked() => PlayOneShot(betLocked);
+  internal void PlayExtraPay() => PlayOneShot(extraPay);
+  internal void PlayWin() => PlayOneShot(coinWin);
 
-    internal void PlayWLAudio(string type)
-    {
-        audioPlayer_wl.loop = false;
-        int index = 0;
-        switch (type)
-        {
-            case "betDone":
-                index = 0;
-                // audioPlayer_wl.loop = true;
-                break;
-            case "amount":
-                index = 1;
-                break;
-            case "openChip":
-                index = 2;
-                break;
-            case "extraPay":
-                index = 3;
-                break;
-            case "betNow":
-                index = 4;
-                break;
-            case "pop":
-                index = 5;
-                break;
-            case "shakingDice":
-                index = 6;
-                break;
-            case "singleChip":
-                index = 7;
-                break;
+  // One-shots overlap, so a click never cuts off a banner voice
+  private void PlayOneShot(AudioClip clip)
+  {
+    if (sfxSource && clip) sfxSource.PlayOneShot(clip);
+  }
 
-        }
-        StopWLAaudio();
-        audioPlayer_wl.clip = clips[index];
-        audioPlayer_wl.Play();
+  // Full volume from the start, silent by the time the roll ends
+  internal void PlayDiceRoll(float rollDuration)
+  {
+    if (!diceSource || !diceShaking) return;
 
-    }
+    diceFade?.Kill();
+    diceSource.Stop();
+    diceSource.clip = diceShaking;
+    diceSource.loop = false;
+    diceSource.volume = 1f;
+    diceSource.Play();
 
+    float fade = Mathf.Min(diceFadeOut, rollDuration);
+    diceFade = diceSource.DOFade(0f, fade)
+        .SetDelay(Mathf.Max(0f, rollDuration - fade))
+        .OnComplete(diceSource.Stop);
+  }
 
-    internal void PlayButtonAudio()
-    {
-        audioPlayer_button.Play();
-    }
+  private bool isForceMuted = false;
+  private bool soundMuted = false;
+  private bool musicMuted = false;
 
-    internal void PlayBetButtonAudio()
-    {
-        audioBet_button.Play();
-    }
+  // Focus-driven — called from BOTH OnFocusChanged and OnApplicationFocus
+  internal void SetMuteAll(bool forceMute)
+  {
+    if (forceMute == isForceMuted) return;
+    isForceMuted = forceMute;
+    ApplyMutes();
+  }
 
-    internal void PlayGirlAudio(string type)
-    {
-        // audioWin.Play();
-        audioWin.loop = false;
-        int index = 0;
-        switch (type)
-        {
-            case "timeisrunning":
-                index = 0;
-                audioPlayer_wl.loop = true;
-                break;
-            case "betSelect":
-                index = 1;
-                break;
-            case "placeyourbet":
-                index = 2;
-                break;
-            case "nomorebets":
-                index = 3;
-                break;
-            case "newround":
-                index = 4;
-                break;
+  internal void ToggleSoundMute(bool mute)
+  {
+    soundMuted = mute;
+    ApplyUserMute();
+  }
 
-        }
-        StopWLAaudio();
-        audioPlayer_wl.clip = Voiceclips[index];
-        audioPlayer_wl.Play();
-    }
+  internal void ToggleMusicMute(bool mute)
+  {
+    musicMuted = mute;
+    ApplyUserMute();
+  }
 
+  // A toggle can only be pressed while focused, so it also clears a focus mute that got stuck
+  private void ApplyUserMute()
+  {
+    isForceMuted = false;
+    ApplyMutes();
+  }
 
+  private void ApplyMutes()
+  {
+    bool music = isForceMuted || musicMuted;
+    bool sound = isForceMuted || soundMuted;
 
-    internal void StopWLAaudio()
-    {
-        audioPlayer_wl.Stop();
-        audioPlayer_wl.loop = false;
-    }
+    if (musicSource) musicSource.mute = music;
+    if (sfxSource) sfxSource.mute = sound;
+    if (diceSource) diceSource.mute = sound;
+  }
 
+  // Separate from the mute flags so focus restore and the user's sound setting are untouched
+  internal void SetStartupSilence(bool silent)
+  {
+    AudioListener.volume = silent ? 0f : 1f;
+  }
 
-    internal void StopBgAudio()
-    {
-        bg_adudio.Stop();
-    }
-
-    private bool isForceMuted = false;
-    private bool preFocusUserMuted = false;
-    private bool userMuted = false;
-
-    // Focus-driven — called from BOTH OnFocusChanged and OnApplicationFocus
-    internal void SetMuteAll(bool forceMute)
-    {
-        if (forceMute == isForceMuted) return;
-        isForceMuted = forceMute;
-
-        if (forceMute)
-        {
-            preFocusUserMuted = userMuted;
-            MuteAllSources(true);
-        }
-        else
-        {
-            MuteAllSources(preFocusUserMuted);
-        }
-    }
-
-    // User-toggle-driven — sound/music button callbacks
-    internal void SetUserMute(bool mute)
-    {
-        userMuted = mute;
-        if (!isForceMuted)
-        {
-            MuteAllSources(userMuted);
-        }
-    }
-
-    private void MuteAllSources(bool mute)
-    {
-        if (bg_adudio) bg_adudio.mute = mute;
-        if (audioPlayer_wl) audioPlayer_wl.mute = mute;
-        if (audioPlayer_button) audioPlayer_button.mute = mute;
-        if (audioBet_button) audioBet_button.mute = mute;
-        if (audioWin) audioWin.mute = mute;
-    }
-
-    // Separate from the mute flags so focus restore and the user's sound setting are untouched
-    internal void SetStartupSilence(bool silent)
-    {
-        AudioListener.volume = silent ? 0f : 1f;
-    }
-
-    private void OnApplicationFocus(bool focus)
-    {
-        SetMuteAll(!focus);
-    }
-
-    internal void ToggleMute(bool toggle, string type = "all")
-    {
-        switch (type)
-        {
-            case "bg":
-                if (bg_adudio) bg_adudio.mute = toggle;
-                break;
-            case "button":
-                if (audioPlayer_button) audioPlayer_button.mute = toggle;
-                break;
-            case "wl":
-                if (audioPlayer_wl) audioPlayer_wl.mute = toggle;
-                break;
-            case "win":
-                if (audioWin) audioWin.mute = toggle;
-                break;
-            case "bet":
-                if (audioBet_button) audioBet_button.mute = toggle;
-                break;
-            case "all":
-                SetUserMute(toggle);
-                break;
-        }
-    }
-
+  private void OnApplicationFocus(bool focus)
+  {
+    SetMuteAll(!focus);
+  }
 }

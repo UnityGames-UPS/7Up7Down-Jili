@@ -5,28 +5,27 @@ using UnityEngine.UI;
 
 public class DiceResultmanager : MonoBehaviour
 {
-    public enum ImageState
+    private enum ImageState
     {
         NONE,
         PLAYING,
         PAUSED
     }
 
-    public static DiceResultmanager Instance;
+    internal static DiceResultmanager Instance;
 
-    public List<Sprite> textureArray;
+    [SerializeField] private List<Sprite> textureArray;
 
-    public Image rendererDelegate;
+    [SerializeField] private Image rendererDelegate;
 
-    public bool useSharedMaterial = true;
+    [SerializeField] private bool useSharedMaterial = true;
 
-    public bool doLoopAnimation = true;
+    [SerializeField] private bool doLoopAnimation = true;
     [SerializeField] private bool StartOnAwake;
 
     [SerializeField] private bool StartonEnable;
 
-    [HideInInspector]
-    public ImageState currentAnimationState;
+    private ImageState currentAnimationState;
 
     private int indexOfTexture;
 
@@ -34,9 +33,12 @@ public class DiceResultmanager : MonoBehaviour
 
     private float delayBetweenAnimation;
 
-    public float AnimationSpeed = 5f;
+    // When the next frame is due; late frames are made up so the roll keeps its length
+    private float nextFrameAt;
 
-    public float delayBetweenLoop;
+    [SerializeField] private float AnimationSpeed = 5f;
+
+    [SerializeField] private float delayBetweenLoop;
     [SerializeField] private Image DiceOneResult;
     [SerializeField] private Image DiceTwoResult;
 
@@ -69,7 +71,7 @@ public class DiceResultmanager : MonoBehaviour
             indexOfTexture = 0;
             if (doLoopAnimation)
             {
-                Invoke("AnimationProcess", delayBetweenAnimation + delayBetweenLoop);
+                ScheduleNextFrame(delayBetweenAnimation + delayBetweenLoop);
             }
             else
             {
@@ -79,11 +81,20 @@ public class DiceResultmanager : MonoBehaviour
         }
         else
         {
-            Invoke("AnimationProcess", delayBetweenAnimation);
+            ScheduleNextFrame(delayBetweenAnimation);
         }
     }
 
-    public void StartAnimation(Sprite firstDice, Sprite secondDice)
+    private void ScheduleNextFrame(float delay)
+    {
+        nextFrameAt = Mathf.Max(nextFrameAt + delay, Time.time);
+        Invoke("AnimationProcess", nextFrameAt - Time.time);
+    }
+
+    // One frame per delay, and the first frame also waits one delay
+    internal float RollDuration => idealFrameRate * textureArray.Count / AnimationSpeed * textureArray.Count;
+
+    internal void StartAnimation(Sprite firstDice, Sprite secondDice)
     {
         StopAnimation();
         DiceOneResult.gameObject.SetActive(false);
@@ -96,12 +107,13 @@ public class DiceResultmanager : MonoBehaviour
             RevertToInitialState();
             delayBetweenAnimation = idealFrameRate * (float)textureArray.Count / AnimationSpeed;
             currentAnimationState = ImageState.PLAYING;
-            Invoke("AnimationProcess", delayBetweenAnimation);
+            nextFrameAt = Time.time;
+            ScheduleNextFrame(delayBetweenAnimation);
         }
     }
 
     // Shows a result without rolling; ignored mid-roll so it cannot spoil the reveal
-    public void ShowResult(Sprite firstDice, Sprite secondDice)
+    internal void ShowResult(Sprite firstDice, Sprite secondDice)
     {
         if (IsInvoking("AnimationProcess")) return;
         DiceOneResult.sprite = firstDice;
@@ -110,7 +122,13 @@ public class DiceResultmanager : MonoBehaviour
         DiceTwoResult.gameObject.SetActive(true);
     }
 
-    public void PauseAnimation()
+    // Drops a roll still in flight so ShowResult can take over
+    internal void CancelRoll()
+    {
+        if (IsInvoking("AnimationProcess")) StopAnimation();
+    }
+
+    internal void PauseAnimation()
     {
         if (currentAnimationState == ImageState.PLAYING)
         {
@@ -119,16 +137,17 @@ public class DiceResultmanager : MonoBehaviour
         }
     }
 
-    public void ResumeAnimation()
+    internal void ResumeAnimation()
     {
         if (currentAnimationState == ImageState.PAUSED && !IsInvoking("AnimationProcess"))
         {
-            Invoke("AnimationProcess", delayBetweenAnimation);
+            nextFrameAt = Time.time;
+            ScheduleNextFrame(delayBetweenAnimation);
             currentAnimationState = ImageState.PLAYING;
         }
     }
 
-    public void StopAnimation()
+    internal void StopAnimation()
     {
         if (currentAnimationState != 0)
         {
@@ -138,7 +157,7 @@ public class DiceResultmanager : MonoBehaviour
         }
     }
 
-    public void RevertToInitialState()
+    internal void RevertToInitialState()
     {
         indexOfTexture = 0;
         SetTextureOfIndex();

@@ -13,7 +13,7 @@ public class SocketIOManager : MonoBehaviour
 {
   [SerializeField] internal GameManager gameManager;
   [SerializeField] internal StartupPage startupPage;
-  [SerializeField] private UiManager uiManager;
+  [SerializeField] private UIManager uiManager;
   [SerializeField] internal LogToggles logs = new LogToggles();
 
   // Payload of the last JOIN_LEVEL / PLAYER_MODE reply
@@ -35,7 +35,7 @@ public class SocketIOManager : MonoBehaviour
   [SerializeField] private string testToken;
   internal bool isLoaded = false;
   internal bool SetInit = false;
-  private bool isConnected = false; //Back2 Start
+  private bool isConnected = false; 
   private bool hasEverConnected = false;
 
   private float lastPongTime = 0f;
@@ -49,7 +49,7 @@ public class SocketIOManager : MonoBehaviour
   private string pendingLevel;
   internal bool NormalStart = false;
   internal bool DontDisplayDisconected = false;
-  private Coroutine PingRoutine; //Back2 end
+  private Coroutine PingRoutine; 
   [SerializeField] private GameObject RaycastBlocker;
 
   private void Awake()
@@ -66,8 +66,13 @@ public class SocketIOManager : MonoBehaviour
     //OpenWebsocket();
     OpenSocket();
   }
-  void CloseGame()
+  // The player chose to leave: Quit popup "Yes", the Disconnect popup's exit, or the host page (browser back)
+  internal void CloseGame()
   {
+    if (isExiting) return;
+
+    // Set before the socket closes, so the disconnect that follows is not reported as a failure
+    isExiting = true;
     if (logs.connection) Debug.Log("[SOCKET] Closing game");
     StartCoroutine(CloseSocket());
   }
@@ -177,7 +182,7 @@ public class SocketIOManager : MonoBehaviour
   }
 
   // Connected event handler implementation
-  void OnConnected(ConnectResponse resp) //Back2 Start
+  void OnConnected(ConnectResponse resp) 
   {
     if (logs.connection) Debug.Log("[SOCKET] Connected");
 
@@ -192,9 +197,9 @@ public class SocketIOManager : MonoBehaviour
     missedPongs = 0;
     lastPongTime = Time.time;
     SendPing();
-  } //Back2 end
+  } 
 
-  private void OnPongReceived(string data) //Back2 Start
+  private void OnPongReceived(string data) 
   {
     // Debug.Log("✅ Received pong from server.");
     waitingForPong = false;
@@ -202,15 +207,16 @@ public class SocketIOManager : MonoBehaviour
     lastPongTime = Time.time;
     //  Debug.Log($"⏱️ Updated last pong time: {lastPongTime}");
     //  Debug.Log($"📦 Pong payload: {data}");
-  } //Back2 end
+  } 
 
-  private void OnDisconnected() //Back2 Start
+  private void OnDisconnected() 
   {
     Debug.LogWarning("⚠️ Disconnected from server.");
     isConnected = false;
     uiManager.DisconnectionPopup();
     ResetPingRoutine();
-  } //Back2 end
+  } 
+
   private void OnError(Error err)
   {
     Debug.LogError("[ERROR] Socket error: " + err);
@@ -276,6 +282,7 @@ public class SocketIOManager : MonoBehaviour
   private Coroutine focusCheckRoutine;
   private float maxBackgroundTime = 60f;
   private bool isExiting = false;
+  internal bool IsExiting => isExiting;
   private bool isBeingDestroyed = false;
 
   private void OnDestroy()
@@ -344,13 +351,7 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
-  private void OnSocketOtherDevice(string data)
-  {
-    Debug.Log("Received Device Error with data: " + data);
-    uiManager.ADfunction();
-  }
-
-  private void SendPing() //Back2 Start
+  private void SendPing() 
   {
     ResetPingRoutine();
     PingRoutine = StartCoroutine(PingCheck());
@@ -402,7 +403,8 @@ public class SocketIOManager : MonoBehaviour
       SendDataWithNamespace("ping");
       yield return new WaitForSeconds(pingInterval);
     }
-  } //Back2 end
+  } 
+
   private void AliveRequest()
   {
     SendDataWithNamespace("YES I AM ALIVE");
@@ -429,7 +431,7 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
-  internal IEnumerator CloseSocket() //Back2 Start
+  private IEnumerator CloseSocket() 
   {
     RaycastBlocker.SetActive(true);
     ResetPingRoutine();
@@ -583,7 +585,7 @@ public class SocketIOManager : MonoBehaviour
 
   void OnStart(string json)
   {
-    LogEvent(logs.bets, "[START_GAME] reply:", json);
+    LogEvent(logs.requests, "[START_GAME] reply:", json);
     var reply = JsonUtility.FromJson<Reply<ReplyPayload>>(json);
     if (!reply.success) gameManager.OnStartRejected(reply.payload?.message);
   }
@@ -650,8 +652,9 @@ public class SocketIOManager : MonoBehaviour
   void OnRoomEnter(string json)
   {
     LogEvent(logs.requests, "[JOIN_LEVEL] reply:", json);
-    var reply = JsonUtility.FromJson<Reply<JoinLevelPayload>>(json);
-    if (reply.success == false)
+    // roundState.bonus is a dictionary
+    var reply = JsonConvert.DeserializeObject<Reply<JoinLevelPayload>>(json);
+    if (reply == null || reply.success == false || reply.payload == null)
     {
       Debug.LogError("[JOIN_LEVEL] failed: " + json);
       return;
@@ -662,6 +665,7 @@ public class SocketIOManager : MonoBehaviour
     gameManager.SetCoinData();
     gameManager.SetStats(roomData.stats);
     gameManager.SetOtherplayerData(roomData.leaderboards);
+    gameManager.RestoreRound(roomData.bets, roomData.roundState);
   }
 
   void OnModeChange(string json)
@@ -736,18 +740,18 @@ public class SocketIOManager : MonoBehaviour
 [Serializable]
 public class LogToggles
 {
-  public bool connection = true;
-  public bool init = true;
-  public bool requests = true;
-  public bool round = true;
-  public bool timer = false;
-  public bool bets = true;
+  [SerializeField] internal bool connection = true;
+  [SerializeField] internal bool init = true;
+  [SerializeField] internal bool requests = true;
+  [SerializeField] internal bool round = true;
+  [SerializeField] internal bool timer = false;
+  [SerializeField] internal bool bets = true;
   // Undo, Again, Clear and Double requests and their replies
-  public bool betActions = true;
-  public bool otherBets = false;
-  public bool cashout = true;
-  public bool leaderboard = true;
-  public bool lobby = false;
+  [SerializeField] internal bool betActions = true;
+  [SerializeField] internal bool otherBets = false;
+  [SerializeField] internal bool cashout = true;
+  [SerializeField] internal bool leaderboard = true;
+  [SerializeField] internal bool lobby = false;
 }
 
 // Outbound "request" envelope; payload classes below hold only what each action sends
@@ -836,7 +840,13 @@ public class RoundState
   public long serverTime;
   public int timeRemaining;
   public bool isBettingOpen;
+  // "betting", "bonus", "dice_result" or "cashout"
   public string phase;
+  // 0 until the dice are rolled
+  public int dice1;
+  public int dice2;
+  public string matchSide;
+  public Dictionary<string, int> bonus;
 }
 
 [Serializable]
@@ -1141,6 +1151,20 @@ public class MaxBetLimit
   public int level_4;
   public int level_5;
   public int level_6;
+
+  internal int ForLevel(string level)
+  {
+    switch (level)
+    {
+      case "level_1": return level_1;
+      case "level_2": return level_2;
+      case "level_3": return level_3;
+      case "level_4": return level_4;
+      case "level_5": return level_5;
+      case "level_6": return level_6;
+      default: return 0;
+    }
+  }
 }
 
 [System.Serializable]

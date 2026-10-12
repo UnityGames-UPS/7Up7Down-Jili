@@ -5,26 +5,25 @@ using UnityEngine.UI;
 
 public class ImageAnimation : MonoBehaviour
 {
-	public enum ImageState
+	private enum ImageState
 	{
 		NONE,
 		PLAYING,
 		PAUSED
 	}
 
-	public List<Sprite> textureArray;
+	[SerializeField] private List<Sprite> textureArray;
 
-	public Image rendererDelegate;
+	[SerializeField] private Image rendererDelegate;
 
-	public bool useSharedMaterial = true;
+	[SerializeField] private bool useSharedMaterial = true;
 
-	public bool doLoopAnimation = true;
+	[SerializeField] private bool doLoopAnimation = true;
 	[SerializeField] private bool StartOnAwake;
 
 	[SerializeField] private bool StartonEnable;
 
-	[HideInInspector]
-	public ImageState currentAnimationState;
+	private ImageState currentAnimationState;
 
 	private int indexOfTexture;
 
@@ -32,9 +31,12 @@ public class ImageAnimation : MonoBehaviour
 
 	private float delayBetweenAnimation;
 
-	public float AnimationSpeed = 5f;
+	// When the next frame is due; late frames are made up so a clip keeps its length
+	private float nextFrameAt;
 
-	public float delayBetweenLoop;
+	[SerializeField] private float AnimationSpeed = 5f;
+
+	[SerializeField] private float delayBetweenLoop;
 
 	private Action onComplete;
 	private Action onMark;
@@ -83,7 +85,7 @@ public class ImageAnimation : MonoBehaviour
 			Action completed = onComplete;
 			if (doLoopAnimation)
 			{
-				Invoke("AnimationProcess", delayBetweenAnimation + delayBetweenLoop);
+				ScheduleNextFrame(delayBetweenAnimation + delayBetweenLoop);
 			}
 			else
 			{
@@ -95,8 +97,14 @@ public class ImageAnimation : MonoBehaviour
 		}
 		else
 		{
-			Invoke("AnimationProcess", delayBetweenAnimation);
+			ScheduleNextFrame(delayBetweenAnimation);
 		}
+	}
+
+	private void ScheduleNextFrame(float delay)
+	{
+		nextFrameAt = Mathf.Max(nextFrameAt + delay, Time.time);
+		Invoke("AnimationProcess", nextFrameAt - Time.time);
 	}
 
 	// Restarts from the first frame; onComplete fires after the last frame (every loop if looping)
@@ -119,7 +127,7 @@ public class ImageAnimation : MonoBehaviour
 		this.onFrame = onFrame;
 	}
 
-	public void StartAnimation()
+	internal void StartAnimation()
 	{
 		indexOfTexture = 0;
 		if (currentAnimationState == ImageState.NONE)
@@ -127,11 +135,19 @@ public class ImageAnimation : MonoBehaviour
 			RevertToInitialState();
 			delayBetweenAnimation = idealFrameRate * (float)textureArray.Count / AnimationSpeed;
 			currentAnimationState = ImageState.PLAYING;
-			Invoke("AnimationProcess", delayBetweenAnimation);
+			nextFrameAt = Time.time;
+			ScheduleNextFrame(delayBetweenAnimation);
 		}
 	}
 
-	public void PauseAnimation()
+	// Rests on the final frame without playing
+	internal void ShowLastFrame()
+	{
+		StopAnimation();
+		rendererDelegate.sprite = textureArray[textureArray.Count - 1];
+	}
+
+	internal void PauseAnimation()
 	{
 		if (currentAnimationState == ImageState.PLAYING)
 		{
@@ -140,16 +156,17 @@ public class ImageAnimation : MonoBehaviour
 		}
 	}
 
-	public void ResumeAnimation()
+	internal void ResumeAnimation()
 	{
 		if (currentAnimationState == ImageState.PAUSED && !IsInvoking("AnimationProcess"))
 		{
-			Invoke("AnimationProcess", delayBetweenAnimation);
+			nextFrameAt = Time.time;
+			ScheduleNextFrame(delayBetweenAnimation);
 			currentAnimationState = ImageState.PLAYING;
 		}
 	}
 
-	public void StopAnimation()
+	internal void StopAnimation()
 	{
 		onComplete = null;
 		onMark = null;
@@ -162,7 +179,7 @@ public class ImageAnimation : MonoBehaviour
 		}
 	}
 
-	public void RevertToInitialState()
+	internal void RevertToInitialState()
 	{
 		indexOfTexture = 0;
 		SetTextureOfIndex();

@@ -1,26 +1,18 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 using UnityEngine.UI;
+using UnityEngine.Events;
+using UnityEngine.EventSystems;
 using TMPro;
-using UnityEngine.Networking;
 
 
-public class UiManager : MonoBehaviour
+public class UIManager : MonoBehaviour
 {
-  [SerializeField]
-  private AudioManager audioController;
-  [SerializeField]
-  private SocketIOManager socketManager;
-  [SerializeField]
-  private JSFunctCalls jsFunctCalls;
-
-  [Header("Cursor")]
-  [SerializeField] private Texture2D cursorTexture;
-  [SerializeField] private Vector2 cursorHotspot = Vector2.zero;
-  [Tooltip("Editor-only cursor size in pixels. Builds use the texture's imported size, which must stay 32 or under.")]
-  [SerializeField] private Vector2Int cursorSize = Vector2Int.zero;
+  [SerializeField] private AudioManager audioController;
+  [SerializeField] private SocketIOManager socketManager;
+  [SerializeField] private JSFunctCalls jsFunctCalls;
+  [SerializeField] private GameManager gameManager;
 
   private void Awake()
   {
@@ -29,7 +21,70 @@ public class UiManager : MonoBehaviour
 
     ApplyCursor();
     SetupChipSelectorBackdrop();
+    SetupSideMenu();
   }
+
+  private void Start()
+  {
+    CollapseCoinsInstant();
+    Bind(coinSelectorButton, ToggleCoins, false);
+    BindCoins();
+    BindInfoPage();
+    BindPopups();
+    BindBetActions();
+  }
+
+  private void Update()
+  {
+    // Polled so the icon follows the real state: Escape, a refused request, the deferred switch
+    if (Screen.fullScreen == isFullscreen) return;
+    isFullscreen = Screen.fullScreen;
+    ApplyExpandShrinkSprites();
+  }
+
+  // Called by the host page through the JS bridge (SendMessage)
+  private void OnFocusChanged(string value)
+  {
+    bool focused = value == "1";
+    Debug.Log("UNITY FOCUS CHANGED: " + value + " (focused: " + focused + ")");
+    audioController?.SetMuteAll(!focused);
+    socketManager?.HandleFocusChange(focused);
+  }
+
+  // The coin selector has its own sound, so it opts out of the click
+  internal void Bind(Button button, UnityAction action, bool clickSound = true)
+  {
+    if (!button) return;
+    button.onClick.RemoveAllListeners();
+    if (clickSound) button.onClick.AddListener(PlayButtonSound);
+    button.onClick.AddListener(action);
+  }
+
+  private void PlayButtonSound()
+  {
+    if (audioController) audioController.PlayButton();
+  }
+
+  private static void SetButtonSprite(Button button, Sprite sprite)
+  {
+    if (button && button.image && sprite) button.image.sprite = sprite;
+  }
+
+  internal string FormatNumber(int number)
+  {
+    if (number >= 1000)
+    {
+      int thousands = number / 1000;
+      return $"{thousands}K";
+    }
+    return number.ToString();
+  }
+
+  [Header("Cursor")]
+  [SerializeField] private Texture2D cursorTexture;
+  [SerializeField] private Vector2 cursorHotspot = Vector2.zero;
+  [Tooltip("Editor-only cursor size in pixels. Builds use the texture's imported size, which must stay 32 or under.")]
+  [SerializeField] private Vector2Int cursorSize = Vector2Int.zero;
 
   private void ApplyCursor()
   {
@@ -70,172 +125,279 @@ public class UiManager : MonoBehaviour
     return resized;
   }
 
-  public void OnFocusChanged(string value)
+  [Header("Side Menu")]
+  [SerializeField] private Button menuButton;
+  [SerializeField] private GameObject sidePanel;
+  [SerializeField] private Button sidePanelCloseButton;
+  // Optional: a parent drawn above the panel, so the menu button stays on top while the menu is open
+  [SerializeField] private Transform menuButtonOpenParent;
+  [SerializeField] private Button infoButton;
+  [SerializeField] private Button soundButton;
+  [SerializeField] private Button musicButton;
+  [SerializeField] private Button expandShrinkButton;
+  [SerializeField] private Button homeButton;
+  [SerializeField] private float menuButtonsDuration = 0.5f;
+  // Local Y inside the buttons' parent that every button folds up to
+  [SerializeField] private float buttonsCollapsedY = 440f;
+
+  [Header("Side Menu Sprites")]
+  [SerializeField] private Sprite soundOnSprite;
+  [SerializeField] private Sprite soundOffSprite;
+  [SerializeField] private Sprite musicOnSprite;
+  [SerializeField] private Sprite musicOffSprite;
+  [SerializeField] private Sprite expandSprite;
+  [SerializeField] private Sprite shrinkSprite;
+
+  private List<Button> menuButtons;
+  private readonly List<RectTransform> menuButtonsRects = new List<RectTransform>();
+  private readonly List<Vector3> menuButtonsPositions = new List<Vector3>();
+  private readonly List<Vector2> menuButtonsSizes = new List<Vector2>();
+  private Transform menuButtonOriginalParent;
+  private int menuButtonOriginalSiblingIndex;
+  private Tween menuToggleTween;
+  private TMP_Text expandShrinkLabel;
+  private bool isMenuOpen = false;
+  private bool isFullscreen = false;
+  private bool isMusic = true;
+  private bool isSound = true;
+
+  private void SetupSideMenu()
   {
-    bool focused = value == "1";
-    Debug.Log("UNITY FOCUS CHANGED: " + value + " (focused: " + focused + ")");
-    audioController?.SetMuteAll(focused ? !isSound : true);
-    socketManager?.HandleFocusChange(focused);
+    menuButtons = new List<Button> { infoButton, soundButton, musicButton, expandShrinkButton, homeButton };
+    menuButtons.RemoveAll(btn => btn == null);
+
+    // The scene holds the buttons in their open pose; it is cached here, then folded away
+    foreach (Button btn in menuButtons)
+    {
+      RectTransform rect = btn.GetComponent<RectTransform>();
+      menuButtonsRects.Add(rect);
+      menuButtonsPositions.Add(rect.localPosition);
+      menuButtonsSizes.Add(rect.sizeDelta);
+      rect.localPosition = new Vector3(rect.localPosition.x, buttonsCollapsedY, rect.localPosition.z);
+      rect.sizeDelta = new Vector2(rect.sizeDelta.x, 0f);
+      if (btn.targetGraphic) btn.targetGraphic.raycastTarget = false;
+    }
+    if (sidePanel) sidePanel.SetActive(false);
+
+    if (menuButton)
+    {
+      Bind(menuButton, ToggleMenu);
+      menuButtonOriginalParent = menuButton.transform.parent;
+      menuButtonOriginalSiblingIndex = menuButton.transform.GetSiblingIndex();
+    }
+
+    if (sidePanelCloseButton)
+    {
+      Bind(sidePanelCloseButton, ToggleMenu);
+      sidePanelCloseButton.interactable = false;
+    }
+
+    Bind(infoButton, OpenInfoPage);
+    Bind(soundButton, ToggleSound);
+    Bind(musicButton, ToggleMusic);
+    Bind(homeButton, OpenQuitPopup);
+
+    if (expandShrinkButton)
+    {
+      expandShrinkButton.onClick.RemoveAllListeners();
+      expandShrinkLabel = expandShrinkButton.GetComponentInChildren<TMP_Text>(true);
+
+      // WebGL defers a fullscreen request to the next input event, so it is asked for on press and granted on release
+      EventTrigger.Entry press = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+      press.callback.AddListener(delegate { ToggleFullscreen(); });
+      expandShrinkButton.gameObject.AddComponent<EventTrigger>().triggers.Add(press);
+    }
+    ApplyExpandShrinkSprites();
   }
 
-  [Header("Screens UI")]
-  [SerializeField] private GameObject HomeScreen_Object;
-  [SerializeField] private GameObject GameScreen_Object;
+  private void ToggleMenu()
+  {
+    if (isMenuOpen)
+      RetractMenu();
+    else
+      ExpandMenu();
+  }
 
+  private void ExpandMenu()
+  {
+    isMenuOpen = true;
+    if (sidePanel) sidePanel.SetActive(true);
+    if (sidePanelCloseButton) sidePanelCloseButton.interactable = false;
+    AnimateMenuButtons(true);
+    if (menuButton && menuButtonOpenParent) menuButton.transform.SetParent(menuButtonOpenParent, true);
 
-  [Header("Main Buttons")]
-  [SerializeField] private Button HistoryMain_button;
-  [SerializeField] private Button CasualGame_button;
-  [SerializeField] private Button NoviceGame_button;
-  [SerializeField] private Button ExpertGame_button;
-  [SerializeField] private Button HighRollerGame_button;
+    // Closing is only allowed once the open tween has finished
+    menuToggleTween?.Kill();
+    menuToggleTween = DOVirtual.DelayedCall(menuButtonsDuration, () =>
+    {
+      if (sidePanelCloseButton) sidePanelCloseButton.interactable = true;
+    });
+  }
 
-  [Header("info page")]
-  [SerializeField] private Button MenuInGame_button;
-  [SerializeField] private Button History_button;
-  [SerializeField] private Button Info_button;
-  [SerializeField] private Button Sound_button;
-  [SerializeField] private Button Music_button;
-  [SerializeField] private Button SoundMute_button;
-  [SerializeField] private Button MusicMute_button;
-  [SerializeField] private Button Home_button;
-  [SerializeField] private Button Exit_Button;
-  [SerializeField] private Button YesHome_button;
-  [SerializeField] private Button NoHome_button;
+  private void RetractMenu()
+  {
+    isMenuOpen = false;
+    if (sidePanelCloseButton) sidePanelCloseButton.interactable = false;
+    AnimateMenuButtons(false);
+    if (menuButton && menuButtonOpenParent)
+    {
+      menuButton.transform.SetParent(menuButtonOriginalParent, true);
+      menuButton.transform.SetSiblingIndex(menuButtonOriginalSiblingIndex);
+    }
 
-  [SerializeField] private GameObject MenuPanel_Object;
-  [SerializeField] private GameObject MenuPanelContainer_Object;
-  [SerializeField] private GameObject Homebutton_Object;
+    menuToggleTween?.Kill();
+    menuToggleTween = DOVirtual.DelayedCall(menuButtonsDuration, () =>
+    {
+      if (sidePanel) sidePanel.SetActive(false);
+    });
+  }
 
-  [SerializeField] private Button HistoryClose_button;
+  private void AnimateMenuButtons(bool open)
+  {
+    for (int i = 0; i < menuButtonsRects.Count; i++)
+    {
+      RectTransform rect = menuButtonsRects[i];
+      float targetY = open ? menuButtonsPositions[i].y : buttonsCollapsedY;
+      Vector2 targetSize = open ? menuButtonsSizes[i] : new Vector2(menuButtonsSizes[i].x, 0f);
 
-  [SerializeField] private Button InfoClose_button;
+      rect.DOKill();
+      rect.DOLocalMoveY(targetY, menuButtonsDuration).SetEase(Ease.Linear);
+      rect.DOSizeDelta(targetSize, menuButtonsDuration).SetEase(Ease.Linear);
 
-  [SerializeField] private Button InfoLeft_button;
+      Graphic graphic = menuButtons[i].targetGraphic;
+      if (graphic) graphic.raycastTarget = open;
+    }
+  }
 
-  [SerializeField] private Button InfoRight_button;
+  private void ToggleSound()
+  {
+    isSound = !isSound;
+    SetButtonSprite(soundButton, isSound ? soundOnSprite : soundOffSprite);
+    if (audioController) audioController.ToggleSoundMute(!isSound);
+  }
 
-  [SerializeField] private List<GameObject> InfoPages_Objects;
-  [SerializeField] private List<GameObject> InfoActive_Objects;
-  private int currentInfoPage = 0;
+  private void ToggleMusic()
+  {
+    isMusic = !isMusic;
+    SetButtonSprite(musicButton, isMusic ? musicOnSprite : musicOffSprite);
+    if (audioController) audioController.ToggleMusicMute(!isMusic);
+  }
 
-  private bool IsMenuPanelOpen = false;
+  private void ToggleFullscreen()
+  {
+    PlayButtonSound();
+    Screen.fullScreen = !Screen.fullScreen;
+  }
 
+  private void ApplyExpandShrinkSprites()
+  {
+    SetButtonSprite(expandShrinkButton, isFullscreen ? shrinkSprite : expandSprite);
+    if (expandShrinkLabel) expandShrinkLabel.text = isFullscreen ? "Shrink" : "Expand";
+  }
 
-  [Header("Game Rules")]
-  [SerializeField] internal List<TMP_Text> PayoutText;
-  [SerializeField] private GameObject LeaderBoard;
-  [SerializeField] private GameObject Diamond;
+  [Header("Info Page")]
+  // Lives under the game page, so it never uses the popup root
+  [SerializeField] private GameObject infoPage;
+  [SerializeField] private Button infoCloseButton;
+  // One per row of the betting-limit table; every row shows the current level's limit
+  [SerializeField] private List<TMP_Text> infoMaxBetTexts;
 
+  private void BindInfoPage()
+  {
+    Bind(infoCloseButton, CloseInfoPage);
+  }
 
+  private void OpenInfoPage()
+  {
+    RetractMenu();
+    if (infoPage) infoPage.SetActive(true);
+  }
 
+  private void CloseInfoPage()
+  {
+    if (infoPage) infoPage.SetActive(false);
+  }
 
+  internal void SetInfoMaxBet(int maxBet)
+  {
+    foreach (TMP_Text text in infoMaxBetTexts)
+    {
+      if (text) text.text = maxBet.ToString();
+    }
+  }
 
+  [Header("Popups")]
+  // Parent of the three popups and their overlay, drawn above every page
+  [SerializeField] private GameObject popupRoot;
+  [SerializeField] private GameObject quitPopup;
+  [SerializeField] private Button quitYesButton;
+  [SerializeField] private Button quitNoButton;
+  [SerializeField] private GameObject reconnectPopup;
+  [SerializeField] private GameObject disconnectPopup;
+  [SerializeField] private Button disconnectExitButton;
 
+  private void BindPopups()
+  {
+    Bind(quitYesButton, ExitGame);
+    Bind(quitNoButton, CloseQuitPopup);
+    Bind(disconnectExitButton, ExitGame);
+  }
 
+  private static bool IsOpen(GameObject popup) => popup && popup.activeSelf;
 
+  // The root stays on for as long as any of its popups is showing
+  private void SetPopup(GameObject popup, bool show)
+  {
+    if (popup) popup.SetActive(show);
+    if (popupRoot) popupRoot.SetActive(IsOpen(quitPopup) || IsOpen(reconnectPopup) || IsOpen(disconnectPopup));
+  }
 
-  [Header("Popus UI")]
-  [SerializeField]
-  private GameObject MainPopup_Object;
-  [SerializeField]
-  private GameObject PaytablePopup_Object;
-  [SerializeField] private GameObject GameQuitPopup;
-  [SerializeField] private GameObject HistoryPopup_Object;
-  [SerializeField] private GameObject InfoPopup_Object;
+  private void OpenQuitPopup()
+  {
+    RetractMenu();
+    SetPopup(quitPopup, true);
+  }
 
+  private void CloseQuitPopup()
+  {
+    if (socketManager.IsExiting) return;
 
+    SetPopup(quitPopup, false);
+  }
 
-  [Header("Settings Popup")]
-  [SerializeField]
-  private GameObject SettingsPopup_Object;
-  [SerializeField]
-  private Button SettingsExit_Button;
-  [SerializeField]
-  private Button Sound_Button;
-  [SerializeField]
-  private Button Music_Button;
+  internal void ReconnectionPopup()
+  {
+    if (socketManager.IsExiting) return;
 
-  [SerializeField]
-  private GameObject MusicOn_Object;
-  [SerializeField]
-  private GameObject MusicOff_Object;
-  [SerializeField]
-  private GameObject SoundOn_Object;
-  [SerializeField]
-  private GameObject SoundOff_Object;
-  [Header("Disconnection Popup")]
-  [SerializeField]
-  private Button CloseDisconnect_Button;
-  [SerializeField]
-  private GameObject DisconnectPopup_Object;
+    SetPopup(reconnectPopup, true);
+  }
 
-  [Header("AnotherDevice Popup")]
-  [SerializeField]
-  private Button CloseAD_Button;
-  [SerializeField]
-  private GameObject ADPopup_Object;
+  internal void DisconnectionPopup()
+  {
+    // Closing the game drops the socket on purpose
+    if (socketManager.IsExiting) return;
 
-  [Header("Reconnection Popup")]
-  [SerializeField]
-  private TMP_Text reconnect_Text;
-  [SerializeField]
-  private GameObject ReconnectPopup_Object;
+    // Its only way out is exiting, so nothing else stays stacked under it
+    if (quitPopup) quitPopup.SetActive(false);
+    if (reconnectPopup) reconnectPopup.SetActive(false);
+    SetPopup(disconnectPopup, true);
+  }
 
-  [Header("LowBalance Popup")]
-  [SerializeField]
-  private Button LBExit_Button;
-  [SerializeField]
-  private GameObject LBPopup_Object;
-  [Header("History Popup")]
-  [SerializeField]
-  private GameObject Pageparent;
+  internal void CheckAndClosePopups()
+  {
+    if (IsOpen(reconnectPopup)) SetPopup(reconnectPopup, false);
+    if (IsOpen(disconnectPopup)) SetPopup(disconnectPopup, false);
+  }
 
-  [SerializeField] private GameObject HistoryPrefab;
-  [SerializeField] private TMP_Text HistoryNav;
-  [SerializeField] private int CurrentHistoryPage;
-  [SerializeField] private int MaxHistoryPage;
-  [SerializeField] private Button HistoryLeft;
-  [SerializeField] private Button HistoryRight;
+  private void ExitGame()
+  {
+    socketManager.CloseGame();
+  }
 
-  [Header("Quit Popup")]
-  [SerializeField]
-  private GameObject ExitButton;
-  [SerializeField]
-  private GameObject QuitPopup_Object;
-  [SerializeField]
-  private Button YesQuit_Button;
-  [SerializeField]
-  private Button NoQuit_Button;
-  [SerializeField]
-  private Button CrossQuit_Button;
-
-  [SerializeField]
-  internal GameObject touchDisable;
-  [SerializeField]
-  private Button Settings_Button;
-  [SerializeField]
-  private Button Paytable_Button;
-  [SerializeField]
-  private Button PaytableExit_Button;
-  [SerializeField]
-  private Button GameExit_Button;
-  [SerializeField]
-  private GameManager gameManager;
-
-  bool isExit;
-  bool isMusic;
-  bool isSound;
-
-  private bool isExpanded = false;
-
-
-
-  [Header("coins")]
-  [SerializeField] internal GameObject chipPanel;
+  [Header("Chip Selector")]
   [SerializeField] internal Chip coinSelector;
-  [SerializeField] internal Button coinSelectorBtn;
-  [SerializeField] internal List<Chip> Coins;
+  [SerializeField] private Button coinSelectorButton;
+  [SerializeField] internal List<Chip> coins;
   // Full-screen button behind the fan; clicking it closes the selector
   [SerializeField] private Button chipSelectorBackdrop;
   [SerializeField] private float backdropAlpha = 0.1f;
@@ -253,468 +415,8 @@ public class UiManager : MonoBehaviour
   [SerializeField] private Ease fanOpenEase = Ease.OutBack;
   [SerializeField] private Ease fanCloseEase = Ease.InBack;
 
-  [Header("Chipoptions")]
-  [SerializeField] internal GameObject Repeatpanel;
-  [SerializeField] internal Button Repeatbtn;
-  [SerializeField] internal GameObject chiOptionpanel;
-  [SerializeField] internal Button Undubtn;
-  [SerializeField] internal Button Canclebtn;
-  [SerializeField] internal Button Doublebtn;
-  [SerializeField] internal Button AutoBtn;
-  [SerializeField] internal Button StopAutoBtn;
-  [SerializeField] internal Button StartBtn;
-  [SerializeField] internal TMP_Text NetBet;
-  [Header("player data")]
-  [SerializeField] internal PlayerData MainPlayers;
-  [Header("Menu Panel")]
-  [SerializeField] private float slideDuration = 0.3f;
-  private bool isAnimating = false;
-  private Vector3 originalPosition;
-
-  private RectTransform buttonRect;
-
   private int uiSelectedCoin = 0;
-
-  private void Start()
-  {
-    CollapseCoinsInstant();
-    if (coinSelectorBtn) coinSelectorBtn.onClick.RemoveAllListeners();
-    if (coinSelectorBtn) coinSelectorBtn.onClick.AddListener(delegate { ToggleCoins(); });
-
-    if (Paytable_Button) Paytable_Button.onClick.RemoveAllListeners();
-    if (Paytable_Button) Paytable_Button.onClick.AddListener(delegate { OpenPopup(PaytablePopup_Object); });
-
-    if (PaytableExit_Button) PaytableExit_Button.onClick.RemoveAllListeners();
-    if (PaytableExit_Button) PaytableExit_Button.onClick.AddListener(delegate { ClosePopup(PaytablePopup_Object); });
-
-    if (Settings_Button) Settings_Button.onClick.RemoveAllListeners();
-    if (Settings_Button) Settings_Button.onClick.AddListener(delegate { OpenPopup(SettingsPopup_Object); });
-
-    if (SettingsExit_Button) SettingsExit_Button.onClick.RemoveAllListeners();
-    if (SettingsExit_Button) SettingsExit_Button.onClick.AddListener(delegate { ClosePopup(SettingsPopup_Object); });
-
-    if (MusicOn_Object) MusicOn_Object.SetActive(true);
-    if (MusicOff_Object) MusicOff_Object.SetActive(false);
-
-    if (SoundOn_Object) SoundOn_Object.SetActive(true);
-    if (SoundOff_Object) SoundOff_Object.SetActive(false);
-
-    if (GameExit_Button) GameExit_Button.onClick.RemoveAllListeners();
-    if (GameExit_Button) GameExit_Button.onClick.AddListener(delegate
-    {
-      OpenPopup(QuitPopup_Object);
-    });
-
-    if (NoQuit_Button) NoQuit_Button.onClick.RemoveAllListeners();
-    if (NoQuit_Button) NoQuit_Button.onClick.AddListener(delegate
-    {
-      if (!isExit)
-      {
-        ClosePopup(QuitPopup_Object);
-      }
-    });
-
-    if (CrossQuit_Button) CrossQuit_Button.onClick.RemoveAllListeners();
-    if (CrossQuit_Button) CrossQuit_Button.onClick.AddListener(delegate
-    {
-      if (!isExit)
-      {
-        ClosePopup(QuitPopup_Object);
-      }
-    });
-
-    if (LBExit_Button) LBExit_Button.onClick.RemoveAllListeners();
-    if (LBExit_Button) LBExit_Button.onClick.AddListener(delegate { ClosePopup(LBPopup_Object); });
-
-    if (YesQuit_Button) YesQuit_Button.onClick.RemoveAllListeners();
-    if (YesQuit_Button) YesQuit_Button.onClick.AddListener(delegate
-    {
-      CallOnExitFunction();
-    });
-
-    if (CloseDisconnect_Button) CloseDisconnect_Button.onClick.RemoveAllListeners();
-    if (CloseDisconnect_Button) CloseDisconnect_Button.onClick.AddListener(delegate { CallOnExitFunction(); });
-
-    if (CloseAD_Button) CloseAD_Button.onClick.RemoveAllListeners();
-    if (CloseAD_Button) CloseAD_Button.onClick.AddListener(CallOnExitFunction);
-
-
-
-    if (audioController) audioController.ToggleMute(false);
-
-    isMusic = true;
-    isSound = true;
-
-    if (Sound_Button) Sound_Button.onClick.RemoveAllListeners();
-    if (Sound_Button) Sound_Button.onClick.AddListener(ToggleSound);
-
-    if (Music_Button) Music_Button.onClick.RemoveAllListeners();
-    if (Music_Button) Music_Button.onClick.AddListener(ToggleMusic);
-
-
-    if (HistoryMain_button) HistoryMain_button.onClick.RemoveAllListeners();
-    if (HistoryMain_button) HistoryMain_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); HistorypageOpen(); });
-
-    // if (MenuInGame_button) MenuInGame_button.onClick.RemoveAllListeners();
-    // if (MenuInGame_button) MenuInGame_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
-
-    if (CasualGame_button) CasualGame_button.onClick.RemoveAllListeners();
-    if (CasualGame_button) CasualGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
-
-    if (NoviceGame_button) NoviceGame_button.onClick.RemoveAllListeners();
-    if (NoviceGame_button) NoviceGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
-
-    if (ExpertGame_button) ExpertGame_button.onClick.RemoveAllListeners();
-    if (ExpertGame_button) ExpertGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
-
-    if (HighRollerGame_button) HighRollerGame_button.onClick.RemoveAllListeners();
-    if (HighRollerGame_button) HighRollerGame_button.onClick.AddListener(delegate { ResetMenuPanel(true); GameScreen_Object.SetActive(true); });
-
-    if (Info_button) Info_button.onClick.RemoveAllListeners();
-    if (Info_button) Info_button.onClick.AddListener(delegate { OpenPopup(InfoPopup_Object); });
-
-    if (History_button) History_button.onClick.RemoveAllListeners();
-    if (History_button) History_button.onClick.AddListener(delegate { OpenPopup(HistoryPopup_Object); HistorypageOpen(); });
-
-    if (Sound_button) Sound_button.onClick.RemoveAllListeners();
-    if (Sound_button) Sound_button.onClick.AddListener(delegate { ToggleSound(); });
-
-    if (SoundMute_button) SoundMute_button.onClick.RemoveAllListeners();
-    if (SoundMute_button) SoundMute_button.onClick.AddListener(delegate { ToggleSound(); });
-
-    if (Music_button) Music_button.onClick.RemoveAllListeners();
-    if (Music_button) Music_button.onClick.AddListener(delegate { ToggleSound(); });
-
-    if (MusicMute_button) MusicMute_button.onClick.RemoveAllListeners();
-    if (MusicMute_button) MusicMute_button.onClick.AddListener(delegate { ToggleSound(); });
-
-    if (Home_button) Home_button.onClick.RemoveAllListeners();
-    if (Home_button) Home_button.onClick.AddListener(delegate { OpenPopup(GameQuitPopup); });
-    if (Exit_Button) Exit_Button.onClick.RemoveAllListeners();
-    if (Exit_Button) Exit_Button.onClick.AddListener(delegate { OpenPopup(QuitPopup_Object); });
-
-    if (YesHome_button) YesHome_button.onClick.RemoveAllListeners();
-    if (YesHome_button) YesHome_button.onClick.AddListener(delegate { ClosePopup(GameQuitPopup); socketManager.SendHome(); ResetMenuPanel(false); });
-
-    if (NoHome_button) NoHome_button.onClick.RemoveAllListeners();
-    if (NoHome_button) NoHome_button.onClick.AddListener(delegate { ClosePopup(GameQuitPopup); });
-
-    if (InfoLeft_button) InfoLeft_button.onClick.RemoveAllListeners();
-    if (InfoLeft_button) InfoLeft_button.onClick.AddListener(delegate { GoToPreviousInfoPage(); });
-
-    if (InfoRight_button) InfoRight_button.onClick.RemoveAllListeners();
-    if (InfoRight_button) InfoRight_button.onClick.AddListener(delegate { GoToNextInfoPage(); });
-
-    if (InfoClose_button) InfoClose_button.onClick.RemoveAllListeners();
-    if (InfoClose_button) InfoClose_button.onClick.AddListener(delegate { ClosePopup(InfoPopup_Object); });
-
-    if (HistoryClose_button) HistoryClose_button.onClick.RemoveAllListeners();
-    if (HistoryClose_button) HistoryClose_button.onClick.AddListener(delegate { ClosePopup(HistoryPopup_Object); });
-
-    Repeatbtn.onClick.RemoveAllListeners();
-    Repeatbtn.onClick.AddListener(delegate { gameManager.RequestRepeat(); });
-
-    Undubtn.onClick.RemoveAllListeners();
-    Undubtn.onClick.AddListener(delegate { socketManager.SendUndo(); });
-
-    Canclebtn.onClick.RemoveAllListeners();
-    Canclebtn.onClick.AddListener(delegate { socketManager.SendCancle(); });
-
-    Doublebtn.onClick.RemoveAllListeners();
-    Doublebtn.onClick.AddListener(delegate { socketManager.SendDouble(); });
-
-    AutoBtn.onClick.RemoveAllListeners();
-    AutoBtn.onClick.AddListener(delegate { gameManager.SetAuto(true); });
-
-    StartBtn.onClick.RemoveAllListeners();
-    StartBtn.onClick.AddListener(delegate { gameManager.StartRound(); });
-
-    StopAutoBtn.onClick.RemoveAllListeners();
-    StopAutoBtn.onClick.AddListener(delegate { gameManager.SetAuto(false); });
-
-    foreach (Button btn in new[] { Repeatbtn, Undubtn, Canclebtn, Doublebtn, AutoBtn, StartBtn, StopAutoBtn })
-    {
-      if (!btn.GetComponent<ButtonAnimator>()) btn.gameObject.AddComponent<ButtonAnimator>();
-    }
-
-    // HistoryLeft.onClick.RemoveAllListeners();
-    // HistoryLeft.onClick.AddListener(delegate { if (CurrentHistoryPage - 1 > 0) socketManager.SendHistory(CurrentHistoryPage - 1); });
-
-    // HistoryRight.onClick.RemoveAllListeners();
-    // HistoryRight.onClick.AddListener(delegate { if (CurrentHistoryPage + 1 < MaxHistoryPage) socketManager.SendHistory(CurrentHistoryPage + 1); });
-  }
-
-
-
-
-  #region Everytheing else
-
-  public void ResetMenuPanel(bool IsGameScreen)
-  {
-    // MenuPanel_Object.SetActive(false);
-    if (IsGameScreen)
-    {
-      Homebutton_Object.SetActive(true);
-      //  MenuPanelContainer_Object.transform.localPosition = new Vector2(56, 394);
-      MenuPanelContainer_Object.GetComponent<RectTransform>().anchoredPosition = new Vector2(56, 394);
-      //  MenuPanel_Object.transform.SetParent(GameScreen_Object.transform, true);
-      // int lastIndex = GameScreen_Object.transform.childCount - 1;
-      // MenuPanel_Object.transform.SetSiblingIndex(lastIndex - 1);
-
-    }
-    else
-    {
-      Homebutton_Object.SetActive(false);
-      // MenuPanelContainer_Object.transform.localPosition = new Vector2(56, 221);
-      MenuPanelContainer_Object.GetComponent<RectTransform>().anchoredPosition = new Vector2(56, 221);
-      //  MenuPanel_Object.transform.SetParent(HomeScreen_Object.transform, true);
-      //   int lastIndex = HomeScreen_Object.transform.childCount - 1;
-      // MenuPanel_Object.transform.SetSiblingIndex(lastIndex - 1);
-      //
-    }
-  }
-
-
-  public void ToggleMenuPanel()
-  {
-    if (isAnimating) return;
-
-    if (IsMenuPanelOpen)
-    {
-      CloseMenuPanel();
-    }
-    else
-    {
-      OpenMenuPanel();
-    }
-  }
-
-  private void OpenMenuPanel()
-  {
-    if (isAnimating) return;
-    StartCoroutine(SlideIn());
-  }
-
-  private void CloseMenuPanel()
-  {
-    if (isAnimating) return;
-    StartCoroutine(SlideOut());
-  }
-
-  private IEnumerator SlideIn()
-  {
-    isAnimating = true;
-    MenuPanel_Object.SetActive(true);
-
-    // Slide Menu Panel: from -1200 to -800 (moving RIGHT)
-    Vector3 panelStartPos = new Vector3(-1200, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
-    Vector3 panelEndPos = new Vector3(-800, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
-    MenuPanel_Object.transform.localPosition = panelStartPos;
-
-    // Slide Menu Button: from 0 to -80 (moving LEFT - opposite direction)
-    Vector2 buttonStartPos = new Vector2(0, buttonRect.anchoredPosition.y);
-    Vector2 buttonEndPos = new Vector2(-80, buttonRect.anchoredPosition.y);
-    buttonRect.anchoredPosition = buttonStartPos;
-
-    float elapsed = 0;
-    while (elapsed < slideDuration)
-    {
-      elapsed += Time.deltaTime;
-      float t = elapsed / slideDuration;
-
-      MenuPanel_Object.transform.localPosition = Vector3.Lerp(panelStartPos, panelEndPos, t);
-      buttonRect.anchoredPosition = Vector2.Lerp(buttonStartPos, buttonEndPos, t);
-
-      yield return null;
-    }
-
-    MenuPanel_Object.transform.localPosition = panelEndPos;
-    buttonRect.anchoredPosition = buttonEndPos;
-    IsMenuPanelOpen = true;
-    isAnimating = false;
-  }
-
-  private IEnumerator SlideOut()
-  {
-    isAnimating = true;
-
-    // Slide Menu Panel: from -800 to -1200 (moving LEFT)
-    Vector3 panelStartPos = new Vector3(-800, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
-    Vector3 panelEndPos = new Vector3(-1200, MenuPanel_Object.transform.localPosition.y, MenuPanel_Object.transform.localPosition.z);
-
-    // Slide Menu Button: from -80 to 0 (moving RIGHT - opposite direction)
-    Vector2 buttonStartPos = new Vector2(-80, buttonRect.anchoredPosition.y);
-    Vector2 buttonEndPos = new Vector2(0, buttonRect.anchoredPosition.y);
-
-    float elapsed = 0;
-    while (elapsed < slideDuration)
-    {
-      elapsed += Time.deltaTime;
-      float t = elapsed / slideDuration;
-
-      MenuPanel_Object.transform.localPosition = Vector3.Lerp(panelStartPos, panelEndPos, t);
-      buttonRect.anchoredPosition = Vector2.Lerp(buttonStartPos, buttonEndPos, t);
-
-      yield return null;
-    }
-
-    MenuPanel_Object.transform.localPosition = panelEndPos;
-    buttonRect.anchoredPosition = buttonEndPos;
-    MenuPanel_Object.SetActive(false);
-    IsMenuPanelOpen = false;
-    isAnimating = false;
-  }
-
-  internal string FormatNumber(int number)
-  {
-    if (number >= 1000)
-    {
-      int thousands = number / 1000;
-      return $"{thousands}K";
-    }
-    return number.ToString();
-  }
-  internal void LowBalPopup()
-  {
-    OpenPopup(LBPopup_Object);
-  }
-
-  internal void DisconnectionPopup()
-  {
-    if (!isExit)
-    {
-      OpenPopup(DisconnectPopup_Object);
-    }
-  }
-
-  internal void ReconnectionPopup()
-  {
-    OpenPopup(ReconnectPopup_Object);
-  }
-
-  internal void CheckAndClosePopups()
-  {
-    if (ReconnectPopup_Object.activeInHierarchy)
-    {
-      ClosePopup(ReconnectPopup_Object);
-    }
-    if (DisconnectPopup_Object.activeInHierarchy)
-    {
-      ClosePopup(DisconnectPopup_Object);
-    }
-  }
-
-
-
-  internal void ADfunction()
-  {
-    OpenPopup(ADPopup_Object);
-  }
-
-
-  private void CallOnExitFunction()
-  {
-    StartCoroutine(socketManager.CloseSocket());
-    isExit = true;
-    audioController.PlayButtonAudio();
-  }
-
-
-  internal void HistorypageOpen()
-  {
-    socketManager.SendHistory(1);
-  }
-
-  internal void OpenPopup(GameObject Popup)
-  {
-    if (audioController) audioController.PlayButtonAudio();
-    if (Popup) Popup.SetActive(true);
-    if (MainPopup_Object) MainPopup_Object.SetActive(true);
-  }
-
-  internal void ClosePopup(GameObject Popup)
-  {
-    if (audioController) audioController.PlayButtonAudio();
-    if (Popup) Popup.SetActive(false);
-    if (MainPopup_Object) MainPopup_Object.SetActive(false);
-  }
-
-  private void ToggleMusic()
-  {
-    isMusic = !isMusic;
-    if (isMusic)
-    {
-      Music_button.gameObject.SetActive(true);
-      MusicMute_button.gameObject.SetActive(false);
-      audioController.ToggleMute(false, "bg");
-    }
-    else
-    {
-      Music_button.gameObject.SetActive(false);
-      MusicMute_button.gameObject.SetActive(true);
-      audioController.ToggleMute(true, "bg");
-    }
-  }
-
-  private void UrlButtons(string url)
-  {
-    Application.OpenURL(url);
-  }
-
-  private void ToggleSound()
-  {
-    ToggleMusic();
-    isSound = !isSound;
-    if (isSound)
-    {
-      Sound_button.gameObject.SetActive(true);
-      SoundMute_button.gameObject.SetActive(false);
-      if (audioController) audioController.ToggleMute(false, "button");
-      if (audioController) audioController.ToggleMute(false, "wl");
-      if (audioController) audioController.ToggleMute(false, "win");
-      if (audioController) audioController.ToggleMute(false, "bet");
-
-    }
-    else
-    {
-      Sound_button.gameObject.SetActive(false);
-      SoundMute_button.gameObject.SetActive(true);
-      if (audioController) audioController.ToggleMute(true, "button");
-      if (audioController) audioController.ToggleMute(true, "wl");
-      if (audioController) audioController.ToggleMute(true, "win");
-      if (audioController) audioController.ToggleMute(true, "bet");
-    }
-  }
-
-  private void UpdateInfoUI()
-  {
-    for (int i = 0; i < InfoPages_Objects.Count; i++)
-      InfoPages_Objects[i].SetActive(i == currentInfoPage);
-
-    for (int i = 0; i < InfoActive_Objects.Count; i++)
-      InfoActive_Objects[i].SetActive(i == currentInfoPage);
-
-  }
-
-  private void GoToPreviousInfoPage()
-  {
-    if (audioController) audioController.PlayButtonAudio();
-    currentInfoPage--;
-    if (currentInfoPage < 0)
-      currentInfoPage = InfoPages_Objects.Count - 1;
-
-    UpdateInfoUI();
-  }
-
-  private void GoToNextInfoPage()
-  {
-    if (audioController) audioController.PlayButtonAudio();
-    currentInfoPage++;
-    if (currentInfoPage >= InfoPages_Objects.Count)
-      currentInfoPage = 0;
-
-    UpdateInfoUI();
-  }
+  private bool isExpanded = false;
 
   private void ToggleCoins()
   {
@@ -765,19 +467,19 @@ public class UiManager : MonoBehaviour
 
   private void ExpandCoins()
   {
-    if (audioController) audioController.PlayWLAudio("openChip");
+    if (audioController) audioController.PlayChipSelector();
     FadeBackdrop(true);
 
     Vector3 center = coinSelector.transform.localPosition;
-    int expandCount = Coins.Count - 1;
+    int expandCount = coins.Count - 1;
     int arcIndex = 0;
 
-    for (int i = 0; i < Coins.Count; i++)
+    for (int i = 0; i < coins.Count; i++)
     {
       if (i == uiSelectedCoin)
         continue;
 
-      Chip coin = Coins[i];
+      Chip coin = coins[i];
       coin.transform.DOKill();
       coin.gameObject.SetActive(true);
 
@@ -798,17 +500,17 @@ public class UiManager : MonoBehaviour
   {
     if (!isExpanded) return;
 
-    if (audioController) audioController.PlayWLAudio("coinSelect");
+    if (audioController) audioController.PlayChipSelector();
     FadeBackdrop(false);
 
     Vector3 center = coinSelector.transform.localPosition;
 
-    for (int i = 0; i < Coins.Count; i++)
+    for (int i = 0; i < coins.Count; i++)
     {
       if (i == uiSelectedCoin)
         continue;
 
-      Chip coin = Coins[i];
+      Chip coin = coins[i];
       coin.transform.DOKill();
       coin.transform.DOLocalMove(center, fanCloseDuration)
           .SetEase(fanCloseEase)
@@ -823,13 +525,13 @@ public class UiManager : MonoBehaviour
   {
     Vector3 center = coinSelector.transform.localPosition;
 
-    for (int i = 0; i < Coins.Count; i++)
+    for (int i = 0; i < coins.Count; i++)
     {
       if (i == uiSelectedCoin)
         continue;
 
-      Coins[i].transform.localPosition = center;
-      Coins[i].gameObject.SetActive(false);
+      coins[i].transform.localPosition = center;
+      coins[i].gameObject.SetActive(false);
     }
 
     ShowRepeatIfNoBet();
@@ -839,15 +541,28 @@ public class UiManager : MonoBehaviour
   private void ShowRepeatIfNoBet()
   {
     if (gameManager.currentTotalBet <= 0)
-      Repeatpanel.SetActive(true);
+      repeatPanel.SetActive(true);
   }
 
-  public void OnCoinSelected(Button selectedCoin)
+  private void BindCoins()
+  {
+    foreach (Chip coin in coins)
+    {
+      Button button = coin.GetComponent<Button>();
+      if (!button) continue;
+
+      // A fresh event drops any onClick still wired in the Inspector, so a pick never fires twice
+      button.onClick = new Button.ButtonClickedEvent();
+      button.onClick.AddListener(() => OnCoinSelected(button));
+    }
+  }
+
+  private void OnCoinSelected(Button selectedCoin)
   {
     int newSelectedIndex = -1;
-    for (int i = 0; i < Coins.Count; i++)
+    for (int i = 0; i < coins.Count; i++)
     {
-      if (Coins[i].gameObject == selectedCoin.gameObject)
+      if (coins[i].gameObject == selectedCoin.gameObject)
       {
         newSelectedIndex = i;
         break;
@@ -874,9 +589,9 @@ public class UiManager : MonoBehaviour
     uiSelectedCoin = newSelectedIndex;
 
     RetractCoins();
-    for (int i = 0; i < Coins.Count; i++)
+    for (int i = 0; i < coins.Count; i++)
     {
-      Coins[i].gameObject.SetActive(true);
+      coins[i].gameObject.SetActive(true);
     }
     selectedCoin.gameObject.SetActive(false);
 
@@ -885,61 +600,79 @@ public class UiManager : MonoBehaviour
     selectedCoin.transform.localPosition = coinSelector.transform.localPosition;
   }
 
-  #endregion
+  [Header("Bet Actions")]
+  [SerializeField] private GameObject repeatPanel;
+  [SerializeField] private Button repeatButton;
+  [SerializeField] private GameObject betActionsPanel;
+  [SerializeField] private Button undoButton;
+  [SerializeField] private Button cancelButton;
+  [SerializeField] private Button doubleButton;
+  [SerializeField] private Button autoButton;
+  [SerializeField] private Button stopAutoButton;
+  [SerializeField] internal Button startButton;
+  [SerializeField] private TMP_Text netBetText;
+  [SerializeField] private GameObject singleModeBadge;
 
+  private int currentNetBet = 0;
 
-
-
-  internal void setCoins(bool istrue)
+  private void BindBetActions()
   {
-    chipPanel.SetActive(istrue);
-  }
-  internal int currentNetBet = 0;
+    Bind(repeatButton, () => gameManager.RequestRepeat());
+    Bind(undoButton, () => socketManager.SendUndo());
+    Bind(cancelButton, () => socketManager.SendCancle());
+    Bind(doubleButton, () => socketManager.SendDouble());
+    Bind(autoButton, () => gameManager.SetAuto(true));
+    Bind(stopAutoButton, () => gameManager.SetAuto(false));
+    Bind(startButton, () => gameManager.StartRound());
 
+    foreach (Button btn in new[] { repeatButton, undoButton, cancelButton, doubleButton, autoButton, startButton, stopAutoButton })
+    {
+      if (!btn.GetComponent<ButtonAnimator>()) btn.gameObject.AddComponent<ButtonAnimator>();
+    }
+  }
+
+  // A delta is added to the running total; 0 resets it
   internal void SetNetBetPanel(int totalbet)
   {
     if (totalbet == 0) currentNetBet = 0;
-    else
-    {
-      currentNetBet += totalbet; // add or subtract automatically
-    }
-    // Clamp to 0 (no negative values)
+    else currentNetBet += totalbet;
+
     if (currentNetBet < 0)
       currentNetBet = 0;
 
-    NetBet.text = currentNetBet.ToString();
-  }
-  internal void SetChipoption(bool istrue, bool db = true, bool canc = true, bool undo = true)
-  {
-    chiOptionpanel.SetActive(istrue);
-    Doublebtn.gameObject.SetActive(db);
-    Canclebtn.gameObject.SetActive(canc);
-    Undubtn.gameObject.SetActive(undo);
+    netBetText.text = currentNetBet.ToString();
   }
 
+  internal void ShowBetActions(bool istrue, bool db = true, bool canc = true, bool undo = true)
+  {
+    betActionsPanel.SetActive(istrue);
+    doubleButton.gameObject.SetActive(db);
+    cancelButton.gameObject.SetActive(canc);
+    undoButton.gameObject.SetActive(undo);
+  }
 
   internal void SetSinglePlayerUi(bool single)
   {
-    if (LeaderBoard) LeaderBoard.SetActive(!single);
-    Diamond.SetActive(single);
-    StartBtn.gameObject.SetActive(single);
+    singleModeBadge.SetActive(single);
+    startButton.gameObject.SetActive(single);
   }
 
   internal void SetBetActionButtons(bool interactable)
   {
-    Undubtn.interactable = interactable;
-    Canclebtn.interactable = interactable;
-    Doublebtn.interactable = interactable;
+    undoButton.interactable = interactable;
+    cancelButton.interactable = interactable;
+    doubleButton.interactable = interactable;
   }
 
   // Again, Auto and Auto Stop share one position, so exactly one is shown
   internal void SetRepeatSlot(bool autoOn, bool offerAuto, bool canRepeat)
   {
-    StopAutoBtn.gameObject.SetActive(autoOn);
-    AutoBtn.gameObject.SetActive(!autoOn && offerAuto);
-    Repeatbtn.gameObject.SetActive(!autoOn && !offerAuto);
-    Repeatbtn.interactable = canRepeat;
+    stopAutoButton.gameObject.SetActive(autoOn);
+    autoButton.gameObject.SetActive(!autoOn && offerAuto);
+    repeatButton.gameObject.SetActive(!autoOn && !offerAuto);
+    repeatButton.interactable = canRepeat;
   }
 
-
+  [Header("Player")]
+  [SerializeField] internal PlayerData mainPlayer;
 }

@@ -56,10 +56,10 @@ public class Chip : MonoBehaviour
 // A bet option's static chip: where a flying chip lands and what it should look like
 public readonly struct ChipReference
 {
-    public readonly RectTransform Rect;
-    public readonly TMP_Text Text;
+    internal readonly RectTransform Rect;
+    internal readonly TMP_Text Text;
 
-    public ChipReference(RectTransform rect, TMP_Text text)
+    internal ChipReference(RectTransform rect, TMP_Text text)
     {
         Rect = rect;
         Text = text;

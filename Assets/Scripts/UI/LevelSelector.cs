@@ -10,9 +10,9 @@ public class LevelSelector : MonoBehaviour
   [Serializable]
   private class LevelButton
   {
-    public Button button;
-    public TMP_Text minText;
-    public TMP_Text maxText;
+    [SerializeField] internal Button button;
+    [SerializeField] internal TMP_Text minText;
+    [SerializeField] internal TMP_Text maxText;
   }
 
   [Header("Panel")]
@@ -37,21 +37,21 @@ public class LevelSelector : MonoBehaviour
 
   [SerializeField] private SocketIOManager socketManager;
   [SerializeField] private GameManager gameManager;
-  [SerializeField] private UiManager uiManager;
+  [SerializeField] private UIManager uiManager;
 
   private bool isOpen;
 
   private void Awake()
   {
-    if (openButton) openButton.onClick.AddListener(Toggle);
+    uiManager.Bind(openButton, Toggle);
     if (backdropButton) backdropButton.onClick.AddListener(Close);
-    multiplayerButton.onClick.AddListener(() => RequestMode("multiple"));
-    singlePlayerButton.onClick.AddListener(() => RequestMode("single"));
+    uiManager.Bind(multiplayerButton, () => RequestMode("multiple"));
+    uiManager.Bind(singlePlayerButton, () => RequestMode("single"));
 
     for (int i = 0; i < levels.Count; i++)
     {
       int index = i;
-      levels[i].button.onClick.AddListener(() => OnLevelClicked(index));
+      uiManager.Bind(levels[i].button, () => OnLevelClicked(index));
     }
 
     panel.anchoredPosition = new Vector2(panel.anchoredPosition.x, closedY);

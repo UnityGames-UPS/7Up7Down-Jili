@@ -103,7 +103,7 @@ public class RoadMapManager : MonoBehaviour
 
   private void Open()
   {
-    if (audioManager) audioManager.PlayButtonAudio();
+    if (audioManager) audioManager.PlayButton();
     popupGroup.DOKill();
     popupGroup.gameObject.SetActive(true);
     popupGroup.blocksRaycasts = true;
@@ -112,7 +112,7 @@ public class RoadMapManager : MonoBehaviour
 
   private void Close()
   {
-    if (audioManager) audioManager.PlayButtonAudio();
+    if (audioManager) audioManager.PlayButton();
     popupGroup.DOKill();
     // Stops blocking clicks as soon as the close starts, not when the fade ends
     popupGroup.blocksRaycasts = false;

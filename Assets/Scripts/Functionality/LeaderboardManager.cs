@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class LeaderboardManager : MonoBehaviour
 {
+  // Parent of the whole board; hidden in single mode
+  [SerializeField] private GameObject root;
   // Rank 1 first
   [SerializeField] private List<LeaderboardAvatar> slots;
   // Shown only while at least one avatar is
@@ -31,6 +33,11 @@ public class LeaderboardManager : MonoBehaviour
       slot.Clear();
     }
     if (title) title.SetActive(false);
+  }
+
+  internal void SetVisible(bool visible)
+  {
+    if (root) root.SetActive(visible);
   }
 
   internal void SetWinners(List<Winner> winners, string playerName)

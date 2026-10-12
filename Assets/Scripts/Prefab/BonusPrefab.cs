@@ -24,6 +24,8 @@ public class BonusPrefab : MonoBehaviour
     {
       if (!group) group = GetComponent<CanvasGroup>();
       if (!group) group = gameObject.AddComponent<CanvasGroup>();
+      // The badge is far larger than its art and sits above the panel buttons
+      group.blocksRaycasts = false;
       return group;
     }
   }
@@ -35,16 +37,20 @@ public class BonusPrefab : MonoBehaviour
   {
     ShowOnly(BgAnimation);
     BgAnimation.Play();
-
-    spriteTags.Clear();
-    foreach (char digit in multiplier.ToString()) AppendSprite(digit - '0');
-    AppendSprite(XSpriteIndex);
-
-    MultiplierText.text = spriteTags.ToString();
+    SetMultiplier(multiplier);
 
     Group.DOFade(1f, settings.fadeInDuration).SetTarget(this);
     MultiplierText.rectTransform.localScale = Vector3.zero;
     MultiplierText.rectTransform.DOScale(1f, settings.textPopDuration).SetEase(settings.textPopEase).SetTarget(this);
+  }
+
+  // The state Show ends in, with nothing playing
+  internal void ShowSettled(int multiplier)
+  {
+    ShowOnly(BgAnimation);
+    BgAnimation.ShowLastFrame();
+    SetMultiplier(multiplier);
+    FinishReveal();
   }
 
   // Glow loops, then the rotation; onDone fires after the rotation's last frame
@@ -126,6 +132,14 @@ public class BonusPrefab : MonoBehaviour
     {
       if (animation) animation.gameObject.SetActive(animation == shown);
     }
+  }
+
+  void SetMultiplier(int multiplier)
+  {
+    spriteTags.Clear();
+    foreach (char digit in multiplier.ToString()) AppendSprite(digit - '0');
+    AppendSprite(XSpriteIndex);
+    MultiplierText.text = spriteTags.ToString();
   }
 
   void AppendSprite(int index)
