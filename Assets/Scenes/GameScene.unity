@@ -2078,6 +2078,7 @@ MonoBehaviour:
   - {fileID: 1198304237}
   - {fileID: 425297346}
   Timer_text: {fileID: 213962666}
+  roundIdText: {fileID: 1179643083}
   CircleTimerFill: {fileID: 380951156}
   betLockLead: 0.5
   chipManager: {fileID: 86763040}
@@ -2098,6 +2099,7 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 0312a29915294468d9c354f685d83d67, type: 3}
   - {fileID: 21300000, guid: e1fce46b449a84dd1ba1db6b837566ba, type: 3}
   - {fileID: 21300000, guid: 4fc0203b1847341d292b7a500cdbb87f, type: 3}
+  resultHold: 0.4
   PlayerWinAnimation: {fileID: 1128915405}
   Extrapay: {fileID: 928283497}
   Betlocked: {fileID: 1441267507}
@@ -20478,8 +20480,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 28.6
-  m_fontSizeBase: 28.6
+  m_fontSize: 20
+  m_fontSizeBase: 20
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
@@ -20495,7 +20497,7 @@ MonoBehaviour:
   m_lineSpacingMax: 0
   m_paragraphSpacing: 0
   m_charWidthMaxAdj: 0
-  m_TextWrappingMode: 1
+  m_TextWrappingMode: 0
   m_wordWrappingRatios: 0.4
   m_overflowMode: 0
   m_linkedTextComponent: {fileID: 0}

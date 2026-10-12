@@ -36,6 +36,7 @@ public class GameManager : MonoBehaviour
 
   [Header("Jili")]
   [SerializeField] private TMP_Text Timer_text;
+  [SerializeField] private TMP_Text roundIdText;
   [SerializeField] private Image CircleTimerFill;
   // Betting locks this many seconds before the server's bettingEndTime
   [SerializeField] private float betLockLead = 0.5f;
@@ -337,6 +338,7 @@ public class GameManager : MonoBehaviour
     if (levelSelector) levelSelector.ShowMode(isSinglePlayer);
 
     RoundState round = mode.roundState;
+    if (round != null) ShowRoundId(round.roundId);
     if (!isSinglePlayer && round != null && round.bettingEndTime > 0)
       SyncBetTimer(round.roundId, round.serverTime, round.bettingEndTime);
   }
@@ -353,6 +355,7 @@ public class GameManager : MonoBehaviour
     roundBonus = null;
 
     ResetTimer();
+    ShowRoundId(null);
     HideRoundBanners();
     winningOptions.Clear();
     StopWinAnimations();
@@ -367,6 +370,7 @@ public class GameManager : MonoBehaviour
     ResetTable();
     if (round == null) return;
 
+    ShowRoundId(round.roundId);
     bool settled = round.phase == "cashout";
     if (!settled) PlaceBetsInstantly(bets);
     // Single mode has no timed phases to catch up with
@@ -568,9 +572,24 @@ public class GameManager : MonoBehaviour
   private float betDuration;
   private int shownSeconds;
 
+  private const string RoundIdPrefix = "round-";
+
+  // Only the label drops the prefix; timerRoundId keeps the raw id
+  void ShowRoundId(string roundId)
+  {
+    if (!roundIdText) return;
+    if (string.IsNullOrEmpty(roundId))
+    {
+      roundIdText.text = "";
+      return;
+    }
+    roundIdText.text = roundId.StartsWith(RoundIdPrefix) ? roundId.Substring(RoundIdPrefix.Length) : roundId;
+  }
+
   // The countdown runs locally; round_start and every timer tick only correct it
   internal void SyncBetTimer(string roundId, long serverTime, long bettingEndTime)
   {
+    ShowRoundId(roundId);
     // No deadline: betting is open with no countdown
     if (bettingEndTime <= 0)
     {
