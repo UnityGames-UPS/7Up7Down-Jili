@@ -2131,6 +2131,7 @@ MonoBehaviour:
     exitDuration: 0.25
   bonusManager: {fileID: 461325412}
   roadMap: {fileID: 875679762}
+  singleRoundEndDelay: 1
   levelSelector: {fileID: 1438353865}
   switchLoadingTime: 2
 --- !u!1 &86763038
@@ -22155,16 +22156,16 @@ MonoBehaviour:
     connection: 0
     init: 0
     requests: 1
-    round: 0
+    round: 1
     timer: 0
     bets: 0
-    betActions: 1
+    betActions: 0
     otherBets: 0
     cashout: 0
     leaderboard: 0
-    lobby: 0
+    lobby: 1
   JSManager: {fileID: 1519490010}
-  testToken: 3e192065a2ef425488078b9131a201c3
+  testToken: 4c720f82f86d4d9c859b02bbfc23c1ad
   RaycastBlocker: {fileID: 1127067818}
 --- !u!4 &1272847617
 Transform:

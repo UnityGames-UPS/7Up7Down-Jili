@@ -206,10 +206,23 @@ carries no `stats`, `bets` or `leaderboards`; `roundState` is `null` when switch
 
 ### Single mode
 
-`GameManager.ApplyPlayerMode` resets the table on a confirmed switch. Single mode has no countdown
-until the player presses Start (`StartRound` → `START_GAME`), which begins a timed round; a timed
-`game:round_start` / `game:betting_timer` before that is treated as stale (`IsStaleTimedEvent`:
-logged as an error and ignored). The round ends at payout (`FinishSingleRound`), which reopens betting.
+`GameManager.ApplyPlayerMode` resets the table on a confirmed switch. A `JOIN_LEVEL` always lands in
+a multiplayer room and its ack carries no mode, so `SetCoinData` drops back to multiple
+(`SetMode(false)`) on every level join. Single mode has no countdown
+and no `game:round_start`: the player bets freely, then Start (`StartRound` → `START_GAME`) clears
+the previous result, locks betting and plays Bet Locked → Extra Pay, standing in for the timer
+hitting 0. The server answers with `game:bonus` at once, `game:dice_result` ~5 s later and
+`game:cashout` ~5 s after that; the `START_GAME` success ack only arrives with the cashout, a
+rejection reopens betting (`OnStartRejected`). Any timed `game:round_start` / `game:betting_timer`
+is stale (`IsStaleTimedEvent`: logged as an error and ignored). The round ends at payout
+(`FinishSingleRound`), which reopens betting; the leaderboard is hidden and not updated.
+
+Auto in single mode is an auto-spin: pressing it with chips down starts the round at once
+(`SetAuto` → `StartRound`, which snapshots the chips as `autoBets`). After each payout the table
+stays locked for `singleRoundEndDelay` (1 s, auto or not; sooner and the server still answers
+"betting closed" to any bet or repeat), then while `ReplayAutoBets` sends those chips again as `PLACE_BET`s (amounts split into the
+level's denominations, largest first); the last ack sends `START_GAME`. It ends on Stop Auto or a
+rejected chip. `REPEAT_BET` is not used for this.
 
 ### Base template lineage
 
@@ -240,8 +253,7 @@ authority when touching any of that code — audit against it rather than redesi
 
 Do not "fix" these silently as drive-by changes; flag them first.
 
-- `GameManager.PlayPopup` and `SetPlayerCountOnReturn` are empty stubs — callers all over expect
-  popups that never appear.
+- `GameManager.PlayPopup` is an empty stub — callers all over expect popups that never appear.
 - `DistributePayouts` recovers the old balance by **string-parsing the balance label** (stripping
   non-digits from `"Rs..."`) to compute `currentWin`; `UpdatePlayerbalance` writes that `"Rs"` prefix.
   Any formatting change to the balance text breaks win calculation.

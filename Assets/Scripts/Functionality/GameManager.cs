@@ -123,6 +123,12 @@ public class GameManager : MonoBehaviour
   internal bool isSinglePlayer = false;
   // Single mode: Start was pressed and that round has not been paid out yet
   private bool singleRoundRunning;
+  // Single mode: the chips of the round last started, which Auto places again
+  private readonly List<(BetOptionView option, int amount)> autoBets = new List<(BetOptionView option, int amount)>();
+  // PLACE_BET acks still due before Auto can start the next round
+  private int autoBetsPending;
+  // Wait after a single-mode payout before betting reopens; sooner and the server answers "betting closed"
+  [SerializeField] private float singleRoundEndDelay = 1f;
 
   [SerializeField] private LevelSelector levelSelector;
   // How long the loading page covers a level or mode switch
@@ -230,14 +236,11 @@ public class GameManager : MonoBehaviour
   internal void SetCoinData()
   {
     ResetCoinsToDefault();
-    TotalPlayer_text.text = socketManager.roomData.playerCount.ToString();
 
-    singleRoundRunning = false;
-    if (levelSelector)
-    {
-      levelSelector.Refresh(currentRoom);
-      levelSelector.ShowMode(isSinglePlayer);
-    }
+    // JOIN_LEVEL always lands in a multiplayer room, and its ack carries no mode
+    SetMode(false);
+    SetPlayerCount(socketManager.roomData.playerCount);
+    if (levelSelector) levelSelector.Refresh(currentRoom);
 
     List<int> data = CurrentRoomChips();
     if (data == null) return;
@@ -323,24 +326,31 @@ public class GameManager : MonoBehaviour
 
   internal void ApplyPlayerMode(ModeChangePayload mode)
   {
-    isSinglePlayer = mode.playerMode == "single";
-    isAuto = false;
-    singleRoundRunning = false;
-    repeatPending = false;
-    hadBetsAtClose = false;
+    SetMode(mode.playerMode == "single");
     ResetTable();
-
-    TotalPlayer_text.text = mode.playerCount.ToString();
-    CircleTimerFill.transform.parent.gameObject.SetActive(!isSinglePlayer);
-    uiManager.SetSinglePlayerUi(isSinglePlayer);
-    ClearLeaderboardHighlight();
-    leaderboardManager.SetVisible(!isSinglePlayer);
-    if (levelSelector) levelSelector.ShowMode(isSinglePlayer);
+    SetPlayerCount(mode.playerCount);
 
     RoundState round = mode.roundState;
     if (round != null) ShowRoundId(round.roundId);
     if (!isSinglePlayer && round != null && round.bettingEndTime > 0)
       SyncBetTimer(round.roundId, round.serverTime, round.bettingEndTime);
+  }
+
+  void SetMode(bool single)
+  {
+    isSinglePlayer = single;
+    isAuto = false;
+    singleRoundRunning = false;
+    repeatPending = false;
+    hadBetsAtClose = false;
+    autoBets.Clear();
+    autoBetsPending = 0;
+
+    CircleTimerFill.transform.parent.gameObject.SetActive(!single);
+    uiManager.SetSinglePlayerUi(single);
+    ClearLeaderboardHighlight();
+    leaderboardManager.SetVisible(!single);
+    if (levelSelector) levelSelector.ShowMode(single);
   }
 
   // The old room's round must not keep running on this table; betting is left open
@@ -463,14 +473,24 @@ public class GameManager : MonoBehaviour
   {
     if (singleRoundRunning) return;
     singleRoundRunning = true;
-    RefreshBetButtons();
+    autoBets.Clear();
+    foreach (var option in betOptions)
+    {
+      if (option.HasPlayerBet) autoBets.Add((option, option.PlayerBet));
+    }
+    // Single mode has no countdown: Start is the moment betting closes
+    ClearRoundResult();
+    LockBetting();
     socketManager.SendStart();
   }
 
   internal void OnStartRejected(string message)
   {
     singleRoundRunning = false;
-    RefreshBetButtons();
+    HideRoundBanners();
+    pendingBonus = null;
+    roundBonus = null;
+    OpenBetting();
     OnBetRejected(message);
   }
 
@@ -481,12 +501,52 @@ public class GameManager : MonoBehaviour
     OpenBetting();
   }
 
-  // Single mode has no timed round until the player presses Start
+  // Auto spin: the table stays locked while last round's chips go back down, then the round starts
+  void ReplayAutoBets()
+  {
+    List<int> chips = CurrentRoomChips();
+    autoBetsPending = 0;
+    foreach (var (option, amount) in autoBets)
+    {
+      int left = amount;
+      for (int i = chips.Count - 1; i >= 0; i--)
+      {
+        while (chips[i] > 0 && left >= chips[i])
+        {
+          left -= chips[i];
+          autoBetsPending++;
+          socketManager.BetPlaced(i, option.BetType, option.BetKey);
+        }
+      }
+      if (left > 0) Debug.LogWarning("[AUTO] " + option.BetKey + ": " + left + " of " + amount + " does not fit the level's chips");
+    }
+
+    if (autoBetsPending == 0) StopAutoSpin();
+  }
+
+  void OnAutoBetPlaced()
+  {
+    if (--autoBetsPending > 0) return;
+
+    singleRoundRunning = false;
+    // Auto can be stopped while the chips are going down
+    if (isAuto) StartRound();
+    else FinishSingleRound();
+  }
+
+  void StopAutoSpin()
+  {
+    autoBetsPending = 0;
+    isAuto = false;
+    FinishSingleRound();
+  }
+
+  // Single mode has no timed rounds
   internal bool IsStaleTimedEvent(string eventName, string roundId, long bettingEndTime)
   {
-    if (!isSinglePlayer || singleRoundRunning || bettingEndTime <= 0) return false;
+    if (!isSinglePlayer || bettingEndTime <= 0) return false;
 
-    Debug.LogError("[" + eventName + "] timed round " + roundId + " received in single mode before START_GAME; ignored");
+    Debug.LogError("[" + eventName + "] timed round " + roundId + " received in single mode; ignored");
     return true;
   }
 
@@ -563,6 +623,8 @@ public class GameManager : MonoBehaviour
   {
     isAuto = on;
     RefreshBetButtons();
+    // Single mode: Auto spins the chips already down; later rounds chain from the payout
+    if (on && isSinglePlayer && !bettingClosed && PlayerHasBets()) StartRound();
   }
 
   private string timerRoundId;
@@ -751,13 +813,23 @@ public class GameManager : MonoBehaviour
     pendingStat = null;
   }
 
-  internal void OnGameLoopStart()
+  // What the previous round left behind, apart from the bets themselves
+  void ClearRoundResult()
   {
     // A round can end without a cashout
     CommitPendingStat();
+    pendingBonus = null;
     roundBonus = null;
-    repeatPending = false;
     highlightLocked = false;
+    winningOptions.Clear();
+    StopWinAnimations();
+    if (bonusManager) bonusManager.ReturnAllItemsToPool();
+  }
+
+  internal void OnGameLoopStart()
+  {
+    ClearRoundResult();
+    repeatPending = false;
     settledOnJoin = false;
     SetBettingClosed(false);
     chipManager.ReturnAllItemsToPool();
@@ -768,11 +840,6 @@ public class GameManager : MonoBehaviour
     PlayRoundBanner(Plesebetnow);
 
     if (isAuto) RequestRepeat();
-
-    winningOptions.Clear();
-    StopWinAnimations();
-    pendingBonus = null;
-    if (bonusManager) bonusManager.ReturnAllItemsToPool();
   }
 
   internal void ManageResult(DiceResultEvent diceResult)
@@ -853,7 +920,7 @@ public class GameManager : MonoBehaviour
       socketManager.playerdata.balance = payout.balance;
       UpdatePlayerbalance(payout.balance.ToString());
     }
-    SetOtherplayerData(cashout.leaderboards);
+    if (!isSinglePlayer) SetOtherplayerData(cashout.leaderboards);
   }
   IEnumerator ManagePayout(CashoutEvent cashout)
   {
@@ -884,12 +951,17 @@ public class GameManager : MonoBehaviour
     // Winning chips are still flying to the avatars the old leaderboard shows
     float collect = chipManager.CollectDuration;
     yield return new WaitForSeconds(collect);
-    SetOtherplayerData(cashout.leaderboards);
+    // The leaderboard is hidden in single mode
+    if (!isSinglePlayer) SetOtherplayerData(cashout.leaderboards);
     yield return new WaitForSeconds(Mathf.Max(0f, 2f - collect));
     if (!isSinglePlayer) yield break;
 
-    FinishSingleRound();
-    if (isAuto) socketManager.SendRepeat();
+    yield return new WaitForSeconds(singleRoundEndDelay);
+    // No round start follows to end the win borders
+    StopWinAnimations();
+    // Auto can be stopped during that wait
+    if (isAuto && autoBets.Count > 0) ReplayAutoBets();
+    else FinishSingleRound();
   }
 
   void ManagePayments(List<Payout> payouts)
@@ -1041,9 +1113,18 @@ public class GameManager : MonoBehaviour
   // Server said no: a late bet just re-locks the table, anything else is shown to the player
   internal void OnBetRejected(string message)
   {
+    // One refused chip ends the auto spin instead of starting a smaller round
+    if (autoBetsPending > 0)
+    {
+      StopAutoSpin();
+      if (!string.IsNullOrEmpty(message)) ShowMessage(message);
+      return;
+    }
     if (string.IsNullOrEmpty(message)) return;
 
-    if (message.IndexOf("betting closed", System.StringComparison.OrdinalIgnoreCase) >= 0)
+    // Single mode has no round start to reopen a table locked here, so the player is told instead
+    bool canRelock = !isSinglePlayer || singleRoundRunning;
+    if (canRelock && message.IndexOf("betting closed", System.StringComparison.OrdinalIgnoreCase) >= 0)
     {
       SetBettingClosed(true);
       return;
@@ -1064,6 +1145,7 @@ public class GameManager : MonoBehaviour
     audioManager.PlayChipPlace();
     PlacePlayerBet(option, bet.amount);
     RefreshBetButtons();
+    if (autoBetsPending > 0) OnAutoBetPlaced();
   }
 
   // Totals change now; the reference chip catches up when the flying chip lands
@@ -1232,10 +1314,14 @@ public class GameManager : MonoBehaviour
 
 
   #endregion
-  internal void SetPlayerCountOnReturn(Lobby lobby, double playerbalance)
+  internal void OnLobbyCount(Lobby lobby)
   {
-
+    if (isSinglePlayer || lobby == null) return;
+    SetPlayerCount(lobby.ForLevel(currentRoom));
   }
+
+  // A single-mode room only ever holds the player
+  void SetPlayerCount(int count) => TotalPlayer_text.text = (isSinglePlayer ? 1 : count).ToString();
 }
 
 // Tuning for the floating "+profit" text; distances are in the text's anchored units

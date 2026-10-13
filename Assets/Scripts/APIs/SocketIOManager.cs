@@ -616,7 +616,6 @@ public class SocketIOManager : MonoBehaviour
       gameManager.OnBetsRepeated(reply.payload.bets);
       ApplyBalance(reply.payload.balance);
       gameManager.currentTotalBet = reply.payload.totalBet;
-      if (gameManager.isAuto && gameManager.isSinglePlayer) gameManager.StartRound();
     }
     else
     {
@@ -716,7 +715,7 @@ public class SocketIOManager : MonoBehaviour
   {
     LogEvent(logs.lobby, "[game:lobby_count]", data);
     var lobbyCount = JsonUtility.FromJson<LobbyCountEvent>(data);
-    gameManager.SetPlayerCountOnReturn(lobbyCount.lobby, playerdata.balance);
+    gameManager.OnLobbyCount(lobbyCount.lobby);
   }
 
   private void OnBetAcknowledged(string data)
@@ -979,6 +978,20 @@ public class Lobby
   public int level_4;
   public int level_5;
   public int level_6;
+
+  internal int ForLevel(string level)
+  {
+    switch (level)
+    {
+      case "level_1": return level_1;
+      case "level_2": return level_2;
+      case "level_3": return level_3;
+      case "level_4": return level_4;
+      case "level_5": return level_5;
+      case "level_6": return level_6;
+      default: return 0;
+    }
+  }
 }
 
 [Serializable]
