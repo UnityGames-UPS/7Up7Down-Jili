@@ -201,12 +201,13 @@ Both serializers are in play and are not interchangeable:
 Each inbound event has its own DTO (`RoundStartEvent`, `BettingTimerEvent`, `DiceResultEvent`, …)
 and each ack is a `Reply<TPayload>` (`PlaceBetPayload`, `UndoBetPayload`, …), built from the
 captured samples in `Assets/Scripts/JSON/`. `CashoutEvent` and `HomePayload` have no captured
-sample yet and only mirror what the handlers read. The `PLAYER_MODE` reply (`ModeChangePayload`)
-carries no `stats`, `bets` or `leaderboards`; `roundState` is `null` when switching to `multiple`.
+sample yet and only mirror what the handlers read. The `PLAYER_MODE` reply (`ModeChangePayload`,
+samples in `Assets/Scripts/JSON/PlayerModeAck/`) carries `bets` and `roundState` but no `stats` or
+`leaderboards`, and is parsed with `JsonConvert` because `roundState.bonus` is a dictionary.
 
 ### Single mode
 
-`GameManager.ApplyPlayerMode` resets the table on a confirmed switch. A `JOIN_LEVEL` always lands in
+`GameManager.ApplyPlayerMode` rebuilds the table through `RestoreRound` on a confirmed switch. A `JOIN_LEVEL` always lands in
 a multiplayer room and its ack carries no mode, so `SetCoinData` drops back to multiple
 (`SetMode(false)`) on every level join. Single mode has no countdown
 and no `game:round_start`: the player bets freely, then Start (`StartRound` → `START_GAME`) clears
@@ -214,7 +215,7 @@ the previous result, locks betting and plays Bet Locked → Extra Pay, standing 
 hitting 0. The server answers with `game:bonus` at once, `game:dice_result` ~5 s later and
 `game:cashout` ~5 s after that; the `START_GAME` success ack only arrives with the cashout, a
 rejection reopens betting (`OnStartRejected`). Any timed `game:round_start` / `game:betting_timer`
-is stale (`IsStaleTimedEvent`: logged as an error and ignored). The round ends at payout
+is stale (`IsStaleTimedEvent`: logged as a warning and ignored). The round ends at payout
 (`FinishSingleRound`), which reopens betting; the leaderboard is hidden and not updated.
 
 Auto in single mode is an auto-spin: pressing it with chips down starts the round at once

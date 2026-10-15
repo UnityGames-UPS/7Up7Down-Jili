@@ -35,7 +35,7 @@ public class SocketIOManager : MonoBehaviour
   [SerializeField] private string testToken;
   internal bool isLoaded = false;
   internal bool SetInit = false;
-  private bool isConnected = false; 
+  private bool isConnected = false;
   private bool hasEverConnected = false;
 
   private float lastPongTime = 0f;
@@ -49,7 +49,7 @@ public class SocketIOManager : MonoBehaviour
   private string pendingLevel;
   internal bool NormalStart = false;
   internal bool DontDisplayDisconected = false;
-  private Coroutine PingRoutine; 
+  private Coroutine PingRoutine;
   [SerializeField] private GameObject RaycastBlocker;
 
   private void Awake()
@@ -100,8 +100,8 @@ public class SocketIOManager : MonoBehaviour
     options.ConnectWith = Best.SocketIO.Transports.TransportTypes.WebSocket; //BackendChanges
 
 #if UNITY_WEBGL && !UNITY_EDITOR
-        JSManager.SendCustomMessage("authToken");
-        StartCoroutine(WaitForAuthToken(options));
+    JSManager.SendCustomMessage("authToken");
+    StartCoroutine(WaitForAuthToken(options));
 #else
     Func<SocketManager, Socket, object> authFunction = (manager, socket) =>
     {
@@ -182,7 +182,7 @@ public class SocketIOManager : MonoBehaviour
   }
 
   // Connected event handler implementation
-  void OnConnected(ConnectResponse resp) 
+  void OnConnected(ConnectResponse resp)
   {
     if (logs.connection) Debug.Log("[SOCKET] Connected");
 
@@ -197,9 +197,9 @@ public class SocketIOManager : MonoBehaviour
     missedPongs = 0;
     lastPongTime = Time.time;
     SendPing();
-  } 
+  }
 
-  private void OnPongReceived(string data) 
+  private void OnPongReceived(string data)
   {
     // Debug.Log("✅ Received pong from server.");
     waitingForPong = false;
@@ -207,15 +207,15 @@ public class SocketIOManager : MonoBehaviour
     lastPongTime = Time.time;
     //  Debug.Log($"⏱️ Updated last pong time: {lastPongTime}");
     //  Debug.Log($"📦 Pong payload: {data}");
-  } 
+  }
 
-  private void OnDisconnected() 
+  private void OnDisconnected()
   {
     Debug.LogWarning("⚠️ Disconnected from server.");
     isConnected = false;
     uiManager.DisconnectionPopup();
     ResetPingRoutine();
-  } 
+  }
 
   private void OnError(Error err)
   {
@@ -351,7 +351,7 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
-  private void SendPing() 
+  private void SendPing()
   {
     ResetPingRoutine();
     PingRoutine = StartCoroutine(PingCheck());
@@ -403,7 +403,7 @@ public class SocketIOManager : MonoBehaviour
       SendDataWithNamespace("ping");
       yield return new WaitForSeconds(pingInterval);
     }
-  } 
+  }
 
   private void AliveRequest()
   {
@@ -431,7 +431,7 @@ public class SocketIOManager : MonoBehaviour
     }
   }
 
-  private IEnumerator CloseSocket() 
+  private IEnumerator CloseSocket()
   {
     RaycastBlocker.SetActive(true);
     ResetPingRoutine();
@@ -670,8 +670,9 @@ public class SocketIOManager : MonoBehaviour
   void OnModeChange(string json)
   {
     LogEvent(logs.requests, "[PLAYER_MODE] reply:", json);
-    var reply = JsonUtility.FromJson<Reply<ModeChangePayload>>(json);
-    if (reply.success == false)
+    // roundState.bonus is a dictionary
+    var reply = JsonConvert.DeserializeObject<Reply<ModeChangePayload>>(json);
+    if (reply == null || reply.success == false || reply.payload == null)
     {
       Debug.LogError("[PLAYER_MODE] failed: " + json);
       return;
@@ -818,6 +819,7 @@ public class ModeChangePayload : ReplyPayload
   // "single" or "multiple"
   public string playerMode;
   public int playerCount;
+  public List<Bet> bets;
   public RoundState roundState;
 }
 

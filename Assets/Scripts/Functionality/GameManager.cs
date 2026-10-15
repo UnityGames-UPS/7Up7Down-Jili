@@ -327,12 +327,7 @@ public class GameManager : MonoBehaviour
   internal void ApplyPlayerMode(ModeChangePayload mode)
   {
     SetMode(mode.playerMode == "single");
-    ResetTable();
-
-    RoundState round = mode.roundState;
-    if (round != null) ShowRoundId(round.roundId);
-    if (!isSinglePlayer && round != null && round.bettingEndTime > 0)
-      SyncBetTimer(round.roundId, round.serverTime, round.bettingEndTime);
+    RestoreRound(mode.bets, mode.roundState);
   }
 
   void SetMode(bool single)
@@ -546,7 +541,7 @@ public class GameManager : MonoBehaviour
   {
     if (!isSinglePlayer || bettingEndTime <= 0) return false;
 
-    Debug.LogError("[" + eventName + "] timed round " + roundId + " received in single mode; ignored");
+    Debug.LogWarning("[" + eventName + "] timed round " + roundId + " received in single mode; ignored");
     return true;
   }
 

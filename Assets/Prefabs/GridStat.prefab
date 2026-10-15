@@ -93,7 +93,6 @@ MonoBehaviour:
   WinColor: {fileID: 2228275561392621163}
   DiceTotal: {fileID: 5021549112529103593}
   Star: {fileID: 3133150545901164227}
-  colorIndex: 0
 --- !u!1 &3133150545901164227
 GameObject:
   m_ObjectHideFlags: 0
@@ -236,8 +235,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: 12
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 831a2bea3d44a4b7898231d22ecc9ed3, type: 2}
-  m_sharedMaterial: {fileID: -5546211151669796150, guid: 831a2bea3d44a4b7898231d22ecc9ed3, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 4cf981881db5e49bfbd500865654a031, type: 2}
+  m_sharedMaterial: {fileID: -1219986911105644088, guid: 4cf981881db5e49bfbd500865654a031, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -261,7 +260,7 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 30.8
+  m_fontSize: 33.15
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -271,7 +270,7 @@ MonoBehaviour:
   m_HorizontalAlignment: 2
   m_VerticalAlignment: 512
   m_textAlignment: 65535
-  m_characterSpacing: -4.16
+  m_characterSpacing: -6.5
   m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
