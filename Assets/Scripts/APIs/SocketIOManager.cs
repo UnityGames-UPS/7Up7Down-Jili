@@ -679,7 +679,6 @@ public class SocketIOManager : MonoBehaviour
 
     roomData.roomId = reply.payload.roomId;
     roomData.oldRoomId = reply.payload.oldRoomId;
-    roomData.playerCount = reply.payload.playerCount;
     gameManager.ApplyPlayerMode(reply.payload);
   }
 

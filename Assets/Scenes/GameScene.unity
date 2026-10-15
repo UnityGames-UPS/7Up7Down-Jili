@@ -22154,18 +22154,18 @@ MonoBehaviour:
   uiManager: {fileID: 2115417990}
   logs:
     connection: 0
-    init: 0
+    init: 1
     requests: 1
     round: 1
-    timer: 0
-    bets: 0
-    betActions: 0
-    otherBets: 0
-    cashout: 0
-    leaderboard: 0
+    timer: 1
+    bets: 1
+    betActions: 1
+    otherBets: 1
+    cashout: 1
+    leaderboard: 1
     lobby: 1
   JSManager: {fileID: 1519490010}
-  testToken: 4c720f82f86d4d9c859b02bbfc23c1ad
+  testToken: c1e7d6ea4f744a3c8666cf38ab92b592
   RaycastBlocker: {fileID: 1127067818}
 --- !u!4 &1272847617
 Transform:

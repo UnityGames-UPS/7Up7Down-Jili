@@ -63,6 +63,7 @@ public class GameManager : MonoBehaviour
   [SerializeField] private float resultHold = 0.4f;
   private Coroutine resultRoutine;
   private Coroutine payoutRoutine;
+  private Lobby lastLobby;
   [Header("Result ")]
   [SerializeField] private ImageAnimation PlayerWinAnimation;
   [Header("Animations ")]
@@ -239,7 +240,6 @@ public class GameManager : MonoBehaviour
 
     // JOIN_LEVEL always lands in a multiplayer room, and its ack carries no mode
     SetMode(false);
-    SetPlayerCount(socketManager.roomData.playerCount);
     if (levelSelector) levelSelector.Refresh(currentRoom);
 
     List<int> data = CurrentRoomChips();
@@ -328,7 +328,6 @@ public class GameManager : MonoBehaviour
   {
     SetMode(mode.playerMode == "single");
     ResetTable();
-    SetPlayerCount(mode.playerCount);
 
     RoundState round = mode.roundState;
     if (round != null) ShowRoundId(round.roundId);
@@ -351,6 +350,7 @@ public class GameManager : MonoBehaviour
     ClearLeaderboardHighlight();
     leaderboardManager.SetVisible(!single);
     if (levelSelector) levelSelector.ShowMode(single);
+    ShowLobbyCount();
   }
 
   // The old room's round must not keep running on this table; betting is left open
@@ -1316,12 +1316,17 @@ public class GameManager : MonoBehaviour
   #endregion
   internal void OnLobbyCount(Lobby lobby)
   {
-    if (isSinglePlayer || lobby == null) return;
-    SetPlayerCount(lobby.ForLevel(currentRoom));
+    if (lobby == null) return;
+    lastLobby = lobby;
+    ShowLobbyCount();
   }
 
-  // A single-mode room only ever holds the player
-  void SetPlayerCount(int count) => TotalPlayer_text.text = (isSinglePlayer ? 1 : count).ToString();
+  // The count comes only from game:lobby_count; a single-mode room only ever holds the player
+  void ShowLobbyCount()
+  {
+    if (isSinglePlayer) TotalPlayer_text.text = "1";
+    else if (lastLobby != null) TotalPlayer_text.text = lastLobby.ForLevel(currentRoom).ToString();
+  }
 }
 
 // Tuning for the floating "+profit" text; distances are in the text's anchored units
