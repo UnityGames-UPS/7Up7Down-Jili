@@ -578,13 +578,9 @@ public class UIManager : MonoBehaviour
     Chip selectorChip = coinSelector.GetComponent<Chip>();
     Chip selectedChip = selectedCoin.GetComponent<Chip>();
 
-    int tempIndex = selectorChip.chipIndex;
+    // Copy, never swap: each coin keeps its own index, or its label and the index sent on PLACE_BET drift apart
     selectorChip.chipIndex = selectedChip.chipIndex;
-    selectedChip.chipIndex = tempIndex;
-
-    string tempchip = selectorChip.chipAmount;
     selectorChip.chipAmount = selectedChip.chipAmount;
-    selectedChip.chipAmount = tempchip;
 
     uiSelectedCoin = newSelectedIndex;
 
