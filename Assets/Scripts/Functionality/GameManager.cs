@@ -985,22 +985,22 @@ public class GameManager : MonoBehaviour
   }
 
   // Dealer pays winnings onto the option before they are collected by the winners
-  void PayOntoOption(string betKey, int amount, bool isPlayer)
+  void PayOntoOption(string betKey, int total, bool isPlayer)
   {
-    if (amount <= 0 || !TryGetOption(betKey, out BetOptionView option)) return;
+    if (total <= 0 || !TryGetOption(betKey, out BetOptionView option)) return;
 
-    // betWins excludes the stake, so the landed chip is stake + win
+    // betWins includes the stake, so the dealer only adds the win on top of it
     if (isPlayer)
     {
-      int total = option.PlayerBet + amount;
+      int win = Mathf.Max(0, total - option.PlayerBet);
       option.PlayWin(winAnimLayer, winSettings);
-      chipManager.PayFromDealer(option.PlayerReferenceChip, amount, true,
+      chipManager.PayFromDealer(option.PlayerReferenceChip, win, true,
         () => option.ShowPlayerWin(total, chipManager.GetSprite(total, true)));
     }
     else
     {
-      int total = option.OpponentBet + amount;
-      chipManager.PayFromDealer(option.OpponentReferenceChip, amount, false,
+      int win = Mathf.Max(0, total - option.OpponentBet);
+      chipManager.PayFromDealer(option.OpponentReferenceChip, win, false,
         () => option.ShowOpponentWin(total, chipManager.GetSprite(total, false)));
     }
   }
@@ -1037,9 +1037,7 @@ public class GameManager : MonoBehaviour
         if (bet.Value <= 0 || !TryGetOption(bet.Key, out BetOptionView option)) continue;
 
         ChipReference reference = isCurrentPlayer ? option.PlayerReferenceChip : option.OpponentReferenceChip;
-        // The player's own stake leaves the table with the win
-        int collected = isCurrentPlayer ? option.PlayerBet + bet.Value : bet.Value;
-        chipManager.CollectToPlayer(reference, target.position, collected, isCurrentPlayer, onArrived);
+        chipManager.CollectToPlayer(reference, target.position, bet.Value, isCurrentPlayer, onArrived);
       }
 
       if (isCurrentPlayer)
